@@ -401,6 +401,35 @@ tbody tr:last-child td {
     margin-top: 24px
 }
 
+.login-page {
+  min-height: 100vh;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 24px;
+  background-color: #f3f4f6;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+
+  padding: 32px;
+  background-color: white;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.login-card .error {
+    color: red;
+    font-size: 12px;
+}
+
 @media(max-width:900px) {
     .sidebar {
         width: 190px
