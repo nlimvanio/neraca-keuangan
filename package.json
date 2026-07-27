@@ -14,10 +14,10 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "env": "^0.0.2",
-    "mysql2": "^3.23.1",
     "next": "15.5.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
