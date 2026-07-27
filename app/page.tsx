@@ -2,6 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { products as initialProducts, Product } from "@/lib/data";
+import Sidebar from "@/components/Sidebar";
 
 type ProductForm = {
   name: string;
@@ -73,19 +74,7 @@ export default function Home() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-mark">IM</div>
-          <div><strong>Inventory</strong><span>Management</span></div>
-        </div>
-        <nav className="nav">
-          <a className="nav-item active" href="/">Dashboard</a>
-          <a className="nav-item" href="#products">Products</a>
-          <a className="nav-item" href="#movements">Stock Movements</a>
-          <a className="nav-item" href="#categories">Categories</a>
-          <a className="nav-item" href="#suppliers">Suppliers</a>
-        </nav>
-      </aside>
+      <Sidebar />
 
       <main className="main">
         <header className="header">
