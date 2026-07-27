@@ -1,6 +1,17 @@
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const navItems = [
+  { href: "/", label: "Home" },
+  { href: "/pembelian", label: "Pembelian" },
+  { href: "/biaya", label: "Biaya" },
+  { href: "/penjualan", label: "Penjualan" },
+  { href: "/penerimaan", label: "Penerimaan" },
+  { href: "/summary", label: "Summary" }
+]
 
 export default function Sidebar() {
+  const pathName = usePathname();
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -8,24 +19,24 @@ export default function Sidebar() {
         <div><strong>Inventory</strong><span>Management</span></div>
       </div>
       <nav className="nav">
-        <Link href="/" className="nav-item active">
-          Home
-        </Link>
-        <Link href="#products" className="nav-item">
-          Pembelian
-        </Link>
-        <Link href="#movements" className="nav-item">
-          Biaya
-        </Link>
-        <Link href="#categories" className="nav-item">
-          Penjualan
-        </Link>
-        <Link href="#suppliers" className="nav-item">
-          Penerimaan
-        </Link>
-        <Link href="#Summary" className="nav-item">
-          Summary
-        </Link>
+        {
+          navItems.map((item) => {
+            const isActive = 
+            item.href === "/"
+              ? pathName === "/"
+              : pathName === item.href ||
+                pathName.startsWith(`${item.href}/`);
+            
+            return (
+              <Link
+                href={item.href}
+                className={`nav-item ${isActive ? "active" : ""}`}
+              >
+                {item.label}
+              </Link>
+            )
+          })
+        }
       </nav>
     </aside>
   )
