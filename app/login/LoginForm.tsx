@@ -10,7 +10,7 @@ export default function LoginForm() {
   const [state, loginAction] = useActionState(login, undefined);
 
   return (
-    <form className="form-grid" action={loginAction}>
+    <form className="login-form-grid" action={loginAction}>
       <label>
         Email
         <input
@@ -49,7 +49,7 @@ export default function LoginForm() {
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <button disabled={pending} type="submit">
+    <button disabled={pending} type="submit" className="button primary">
       Login
     </button>
   );
