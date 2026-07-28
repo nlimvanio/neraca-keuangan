@@ -7,11 +7,11 @@ const encodedKey = new TextEncoder().encode(secretKey);
 
 export async function createSession(userId: string) {
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 days from now
-    const session = await encrypt({userId, expiresAt})
+    const session = await encrypt({ userId, expiresAt })
 
     const cookieStore = await cookies();
 
-    cookieStore.set("session", session,{
+    cookieStore.set("session", session, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         expires: expiresAt,
@@ -30,19 +30,19 @@ type SessionPayload = {
 
 export async function encrypt(payload: SessionPayload) {
     return new SignJWT(payload)
-        .setProtectedHeader({alg: "HS256"})
+        .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
         .setExpirationTime("7d")
         .sign(encodedKey);
 }
 
-export async function decrypt(session: string | undefined = ""){
-    try{
-        const {payload} = await jwtVerify(session, encodedKey, {
+export async function decrypt(session: string | undefined = "") {
+    try {
+        const { payload } = await jwtVerify(session, encodedKey, {
             algorithms: ["HS256"]
         });
         return payload
     } catch (error) {
-        console.log("Failed to verify session")
+        console.log("Failed to verify session" + error);
     }
 }
