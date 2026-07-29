@@ -29,6 +29,7 @@ export default function Sidebar() {
             
             return (
               <Link
+                key={item.href}
                 href={item.href}
                 className={`nav-item ${isActive ? "active" : ""}`}
               >

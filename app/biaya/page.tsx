@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { FormEvent, useMemo, useState } from "react";
 import { products as initialProducts, Product } from "@/lib/data";
@@ -84,7 +84,7 @@ export default function Biaya() {
           </div>
           <button className="button primary" onClick={() => setShowModal(true)}>+ Add Product</button>
         </header>
-{/* 
+        {/* 
         <section className="stats">
           <div className="stat-card"><span>Total Products</span><strong>{products.length}</strong></div>
           <div className="stat-card"><span>Total Stock</span><strong>{totalStock}</strong></div>
@@ -124,6 +124,9 @@ export default function Biaya() {
                 )}
               </tbody>
             </table>
+          </div>
+          <div className="panel-footer">
+            <button className="button primary" onClick={() => setShowModal(true)}>+ Add Product</button>
           </div>
         </section>
 

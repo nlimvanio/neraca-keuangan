@@ -192,6 +192,15 @@ h2 {
     border-bottom: 1px solid #eceef0
 }
 
+.panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    border-top: 1px solid #eceef0;
+    padding: 20px;
+}
+
 .search {
     width: 220px;
     border: 1px solid #dfe2e5;
