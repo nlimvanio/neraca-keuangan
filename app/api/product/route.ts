@@ -1,19 +1,42 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
 
-import pool from '@/lib/db';
-
-export async function GET(req: Request) {
-    // this is going to be my JSON response
+export async function GET(request: NextRequest) {
     try {
-        const [results] = await pool.query('SELECT * FROM core_product');
-        // response with the JSON object
-        return NextResponse.json(results);
-    } catch (error: any) {
-        console.error('Error executing query:', error);
-        return NextResponse.json({
-            message: error.message,
-            code: error.code,
-        }, { status: 500 }
+        const searchParams = request.nextUrl.searchParams;
+
+        const barcode = searchParams.get("barcode");
+        const name = searchParams.get("name");
+        const price = searchParams.get("price");
+
+        // Build SQL here
+        let sql = "SELECT * FROM core_product WHERE 1=1";
+        const values: any[] = [];
+
+        if (barcode) {
+            sql += " AND barcode = ?";
+            values.push(barcode);
+        }
+
+        if (name) {
+            sql += " AND name LIKE ?";
+            values.push(`%${name}%`);
+        }
+
+        if (price) {
+            sql += " AND price = ?";
+            values.push(price);
+        }
+
+        // Execute SQL here
+        const [rows] = await pool.query(sql, values);
+
+        return NextResponse.json(rows);
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json(
+            { message: "Internal Server Error" },
+            { status: 500 }
         );
     }
 }
