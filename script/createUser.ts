@@ -1,9 +1,10 @@
 import { createInterface } from "node:readline/promises";
+import { loadEnvFile } from "node:process";
 import { stdin as input, stdout as output } from "node:process";
-import pool from "../lib/db";
 import z from "zod";
 import { hash } from "argon2";
 
+loadEnvFile(".env");
 const emailSchema = z.object({
     email: z.string().email({message: "Invalid email address"})
 })
@@ -15,6 +16,8 @@ const passwordSchema = z.object({
 const readline = createInterface({input, output});
 
 async function createUser(){
+    const { default: pool } = await import("@/lib/db");
+
     let email: string;
     let emailValid: boolean = false;
 
@@ -54,7 +57,7 @@ async function createUser(){
         const passwordHash = await hash(password);
 
         await pool.execute(
-            "INSERT INTO core_user (email,password) VALUES ?,?",
+            "INSERT INTO core_user (email,password) VALUES (?,?)",
             [email, passwordHash]
         );
 
