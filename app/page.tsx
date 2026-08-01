@@ -2,6 +2,32 @@
 
 import { FormEvent, useMemo, useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationEllipsis,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 type ProductForm = {
   name: string;
@@ -22,12 +48,19 @@ interface Produk {
   barcode: string;
 }
 
-async function getProducts() {
-  try {
-      const res = await fetch("/api/product");
-
-      console.log("Status:", res.status);
-
+async function getProducts(
+  page: number,
+  pageSize: number,
+  search: string) {
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+      });
+      if (search.trim()) {
+        params.append("search", search);
+      }
+      const res = await fetch(`/api/product?${params}`);
       const data = await res.json();
       return data;
     } catch (err) {
@@ -35,28 +68,66 @@ async function getProducts() {
     }
 }
 
+function getPageNumbers(currentPage: number, totalPages: number) {
+  const pages: (number | "...")[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+  pages.push(1);
+  if (currentPage > 4) {
+    pages.push("...");
+  }
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  if (currentPage < totalPages - 3) {
+    pages.push("...");
+  }
+  pages.push(totalPages);
+  return pages;
+}
+
 export default function Home() {
   console.log("Home rendered");
   const [products, setProducts] = useState<Produk[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const pageNumbers = getPageNumbers(page, totalPages);
+  const [search, setSearch] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState<ProductForm>(emptyForm);
+
+  const offset = (page - 1) * pageSize;
   // setLoading(true);
   useEffect(() => {
     console.log("useEffect running");
     async function loadProducts() {
       console.log("Calling getProducts()");
-      const data = await getProducts();
-      if (data) {
-        setProducts(data);
+      // const data = await getProducts();
+      const result = await getProducts(
+        page,
+        pageSize,
+        search
+      );
+      if (result) {
+        setProducts(result.data);
+        setTotal(result.total);
+        setTotalPages(result.totalPages);
       }
       setLoading(false);
     }
 
     loadProducts();
-  }, []);
-
-  const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState<ProductForm>(emptyForm);
+  }, [page, search]);
 
   const filteredProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -98,9 +169,14 @@ export default function Home() {
       console.log("Product created:", result);
 
       // Reload table
-      const data = await getProducts();
+      const data = await getProducts(
+        page,
+        pageSize,
+        search);
       if (data) {
-        setProducts(data);
+        setProducts(data.data);
+        setTotal(data.total);
+        setTotalPages(data.totalPages);
       }
 
       // Clear form
@@ -124,45 +200,114 @@ export default function Home() {
             <h1>Inventory Dashboard</h1>
             <p className="muted">Keep track of your products and stock levels.</p>
           </div>
-          <button className="button primary" onClick={() => setShowModal(true)}>+ Add Product</button>
+          {/* <button className="button primary" onClick={() => setShowModal(true)}>+ Add Product</button> */}
         </header>
 
-        <section className="panel" id="products">
+        <Card>
+          <CardHeader>
+            <CardTitle>Produk</CardTitle>
+          </CardHeader>
           <div className="panel-header">
-            <div><h2>Products</h2><p className="muted">Search and manage your current inventory.</p></div>
-            <input
+            <Input
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+            <Button onClick={() => setShowModal(true)}>
+              + Produk
+            </Button>
+            {/* <input
               className="search"
               placeholder="Search products..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-            />
+            /> */}
           </div>
 
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Nama Produk</th><th>Harga</th><th>Barcode</th></tr></thead>
-              <tbody>
+          <CardContent>
+            <Table>
+              <TableHeader><TableRow><TableHead>Nama Produk</TableHead><TableHead>Harga</TableHead><TableHead>Barcode</TableHead></TableRow></TableHeader>
+              <TableBody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={3} className="text-center py-4">
-                      Loading products...
-                    </td>
-                  </tr>
+                  (
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Skeleton className="h-4 w-40" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                      </TableRow>
+                    )))
                 ) : filteredProducts.length > 0 ? filteredProducts.map((product) => {
                   return (
-                    <tr key={product.id}>
-                      <td><strong>{product.name}</strong></td>
-                      <td>Rp. {product.price}</td>
-                      <td>{product.barcode}</td>
-                    </tr>
+                    <TableRow key={product.id}>
+                      <TableCell><strong>{product.name}</strong></TableCell>
+                      <TableCell>Rp. {product.price}</TableCell>
+                      <TableCell>{product.barcode}</TableCell>
+                    </TableRow>
                   );
                 }) : (
-                  <tr><td className="empty-state" colSpan={3}>No products found.</td></tr>
+                  <TableRow><TableCell className="empty-state" colSpan={3}>No products found.</TableCell></TableRow>
                 )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+              </TableBody>
+            </Table>
+            <Pagination className="mt-4">
+              
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (page > 1) {
+                          setPage(page - 1);
+                        }
+                      }}
+                    />
+                  </PaginationItem>
+                  {pageNumbers.map((item, index) => (
+                    <PaginationItem key={index}>
+                      {item === "..." ? (
+                        <PaginationEllipsis />
+                      ) : (
+                        <PaginationLink
+                          href="#"
+                          isActive={page === item}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage(item);
+                          }}
+                        >
+                          {item}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        // loading(true)
+                        e.preventDefault();
+                        if (page < totalPages) {
+                          setPage(page + 1);
+                        }
+                      }}
+                    />
+                  </PaginationItem>
+                  Total Produk {total}
+                </PaginationContent>
+              </Pagination>
+          </CardContent>
+        </Card>
       </main>
 
       {showModal && (
