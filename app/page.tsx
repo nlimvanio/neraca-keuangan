@@ -1,27 +1,56 @@
  "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { products as initialProducts, Product } from "@/lib/data";
+import { FormEvent, useMemo, useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 
 type ProductForm = {
   name: string;
-  sku: string;
-  category: string;
-  stock: string;
-  reorderLevel: string;
+  price: string;
+  barcode: string;
 };
 
 const emptyForm: ProductForm = {
   name: "",
-  sku: "",
-  category: "",
-  stock: "",
-  reorderLevel: "",
+  price: "",
+  barcode: ""
 };
 
+interface Produk {
+  id: number;
+  name: string;
+  price: string;
+  barcode: string;
+}
+
+async function getProducts() {
+  try {
+      const res = await fetch("/api/product");
+
+      console.log("Status:", res.status);
+
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.error(err);
+    }
+}
+
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  console.log("Home rendered");
+  const [products, setProducts] = useState<Produk[]>([]);
+  useEffect(() => {
+    console.log("useEffect running");
+    async function loadProducts() {
+      console.log("Calling getProducts()");
+      const data = await getProducts();
+      if (data) {
+        setProducts(data);
+      }
+    }
+
+    loadProducts();
+  }, []);
+
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<ProductForm>(emptyForm);
@@ -31,45 +60,54 @@ export default function Home() {
     if (!query) return products;
 
     return products.filter((product) =>
-      [product.name, product.sku, product.category].some((value) =>
+      [product.name, product.barcode].some((value) =>
         value.toLowerCase().includes(query)
       )
     );
   }, [products, search]);
 
-  const totalStock = products.reduce((sum, product) => sum + product.stock, 0);
-  const lowStock = products.filter((product) => product.stock <= product.reorderLevel).length;
-  const categories = new Set(products.map((product) => product.category)).size;
-
   function updateForm(field: keyof ProductForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {    
     event.preventDefault();
 
-    const newProduct: Product = {
-      id: Date.now(),
-      name: form.name.trim(),
-      sku: form.sku.trim(),
-      category: form.category.trim(),
-      stock: Number(form.stock),
-      reorderLevel: Number(form.reorderLevel),
-    };
+    try {
+      const res = await fetch("/api/product", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          barcode: form.barcode,
+          price: Number(form.price),
+        }),
+      });
 
-    if (
-      !newProduct.name ||
-      !newProduct.sku ||
-      !newProduct.category ||
-      Number.isNaN(newProduct.stock) ||
-      Number.isNaN(newProduct.reorderLevel)
-    ) {
-      return;
+      if (!res.ok) {
+        throw new Error("Failed to save product");
+      }
+
+      const result = await res.json();
+
+      console.log("Product created:", result);
+
+      // Reload table
+      const data = await getProducts();
+      if (data) {
+        setProducts(data);
+      }
+
+      // Clear form
+      setForm(emptyForm);
+      setShowModal(false);
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to save product");
     }
-
-    setProducts((current) => [newProduct, ...current]);
-    setForm(emptyForm);
-    setShowModal(false);
   }
 
   return (
@@ -86,13 +124,6 @@ export default function Home() {
           <button className="button primary" onClick={() => setShowModal(true)}>+ Add Product</button>
         </header>
 
-        <section className="stats">
-          <div className="stat-card"><span>Total Products</span><strong>{products.length}</strong></div>
-          <div className="stat-card"><span>Total Stock</span><strong>{totalStock}</strong></div>
-          <div className="stat-card"><span>Low Stock</span><strong>{lowStock}</strong></div>
-          <div className="stat-card"><span>Categories</span><strong>{categories}</strong></div>
-        </section>
-
         <section className="panel" id="products">
           <div className="panel-header">
             <div><h2>Products</h2><p className="muted">Search and manage your current inventory.</p></div>
@@ -106,45 +137,21 @@ export default function Home() {
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Product</th><th>SKU</th><th>Category</th><th>Stock</th><th>Reorder Level</th><th>Status</th></tr></thead>
+              <thead><tr><th>Nama Produk</th><th>Harga</th><th>Barcode</th></tr></thead>
               <tbody>
                 {filteredProducts.length > 0 ? filteredProducts.map((product) => {
-                  const isLow = product.stock <= product.reorderLevel;
                   return (
                     <tr key={product.id}>
                       <td><strong>{product.name}</strong></td>
-                      <td>{product.sku}</td>
-                      <td>{product.category}</td>
-                      <td>{product.stock}</td>
-                      <td>{product.reorderLevel}</td>
-                      <td><span className={`badge ${isLow ? "warning" : "success"}`}>{isLow ? "Low Stock" : "In Stock"}</span></td>
+                      <td>Rp. {product.price}</td>
+                      <td>{product.barcode}</td>
                     </tr>
                   );
                 }) : (
-                  <tr><td className="empty-state" colSpan={6}>No products found.</td></tr>
+                  <tr><td className="empty-state" colSpan={3}>No products found.</td></tr>
                 )}
               </tbody>
             </table>
-          </div>
-        </section>
-
-        <section className="panel-grid">
-          <div className="panel" id="movements">
-            <div className="panel-header"><div><h2>Recent Movements</h2><p className="muted">Latest stock activity.</p></div></div>
-            <div className="activity-list">
-              <div className="activity"><span className="dot in" /><div><strong>Stock received</strong><p>Wireless Mouse · +50 units</p></div><time>Today</time></div>
-              <div className="activity"><span className="dot out" /><div><strong>Stock issued</strong><p>Mechanical Keyboard · -8 units</p></div><time>Yesterday</time></div>
-              <div className="activity"><span className="dot adjust" /><div><strong>Stock adjusted</strong><p>USB-C Hub · +2 units</p></div><time>2 days ago</time></div>
-            </div>
-          </div>
-
-          <div className="panel" id="categories">
-            <div className="panel-header"><div><h2>Categories</h2><p className="muted">Inventory by category.</p></div></div>
-            <div className="category-list">
-              {Array.from(new Set(products.map((p) => p.category))).map((category) => (
-                <div className="category-row" key={category}><span>{category}</span><strong>{products.filter((p) => p.category === category).length}</strong></div>
-              ))}
-            </div>
           </div>
         </section>
       </main>
@@ -159,11 +166,9 @@ export default function Home() {
 
             <form onSubmit={handleSubmit}>
               <div className="form-grid">
-                <label>Product Name<input required value={form.name} onChange={(e) => updateForm("name", e.target.value)} placeholder="e.g. Wireless Mouse" /></label>
-                <label>SKU<input required value={form.sku} onChange={(e) => updateForm("sku", e.target.value)} placeholder="e.g. WM-007" /></label>
-                <label>Category<input required value={form.category} onChange={(e) => updateForm("category", e.target.value)} placeholder="e.g. Accessories" /></label>
-                <label>Stock Quantity<input required min="0" type="number" value={form.stock} onChange={(e) => updateForm("stock", e.target.value)} placeholder="0" /></label>
-                <label>Reorder Level<input required min="0" type="number" value={form.reorderLevel} onChange={(e) => updateForm("reorderLevel", e.target.value)} placeholder="10" /></label>
+                <label>Nama Produk<input required value={form.name} onChange={(e) => updateForm("name", e.target.value)} placeholder="cth. Pulpen" /></label>
+                <label>Harga<input required value={form.price} onChange={(e) => updateForm("price", e.target.value)} placeholder="cth. 10000" /></label>
+                <label>Barcode<input required value={form.barcode} onChange={(e) => updateForm("barcode", e.target.value)} placeholder="e.g. BDE-0817" /></label>
               </div>
               <div className="modal-actions">
                 <button type="button" className="button secondary" onClick={() => setShowModal(false)}>Cancel</button>

@@ -41,3 +41,45 @@ export async function GET(request: NextRequest) {
     }
 }
 
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    const { name, barcode, price } = body;
+
+    if (!name || !barcode || price == null) {
+      return NextResponse.json(
+        { message: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    const sql = `
+      INSERT INTO core_product
+      (name, barcode, price)
+      VALUES (?, ?, ?)
+    `;
+
+    const [result]: any = await pool.query(sql, [
+      name,
+      barcode,
+      price,
+    ]);
+
+    return NextResponse.json(
+      {
+        message: "Product created",
+        id: result.insertId,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error(error);
+
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
