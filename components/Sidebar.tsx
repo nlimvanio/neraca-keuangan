@@ -30,14 +30,13 @@ export default function Sidebar() {
 
     return (
         <div className={
-            "flex flex-col sm:sticky" +
+            "flex flex-col sticky" +
             " top-0 left-0 " +
-            " sm:min-h-screen bg-[#17191c] text-white " +
-            " w-[] sm:w-[17vw] " +
+            " sm:min-h-screen sm:max-h-screen bg-[#17191c] text-white " +
+            " sm:w-[20vw] " +
             " gap-[1em] py-[24px] px-[16px]" +
             " font-[Arial, Helvetica, sans-serif]" +
-            " text-sm"
-            + (mobileMenuOpen ? " fixed top-0 left-0 right-0 bottom-0 z-50 bg-[#17191c] bg-opacity-30 backdrop-blur-md" : "")
+            " text-sm z-50"
         }
 
         >
@@ -73,7 +72,7 @@ export default function Sidebar() {
                 </div>
             </div>
             {/* Mobile Navigation */}
-            <nav className={("fixed top-16 bottom-0 right-0 left-0 p-5 sm:hidden bg-transparent backdrop-blur-md") + (mobileMenuOpen ? " flex flex-col gap-1.5 text-[#a7abb1] tracking-wide" : " hidden")}>
+            <nav className={("fixed top-16 bottom-0 right-0 left-0 p-5 sm:hidden bg-[#17191c]/90 backdrop-blur-md z-50") + (mobileMenuOpen ? " flex flex-col gap-1.5 text-[#a7abb1] tracking-wide" : " hidden")}>
                 {navPages}
             </nav>
             {/* Desktop Navigation */}
