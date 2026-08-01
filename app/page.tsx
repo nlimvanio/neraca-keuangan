@@ -24,6 +24,7 @@ import {
   PaginationContent,
   PaginationItem,
   PaginationLink,
+  PaginationEllipsis,
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
@@ -56,15 +57,10 @@ async function getProducts(
         page: page.toString(),
         pageSize: pageSize.toString(),
       });
-
       if (search.trim()) {
         params.append("search", search);
       }
-
       const res = await fetch(`/api/product?${params}`);
-
-      console.log("Status:", res.status);
-
       const data = await res.json();
       return data;
     } catch (err) {
@@ -72,15 +68,40 @@ async function getProducts(
     }
 }
 
+function getPageNumbers(currentPage: number, totalPages: number) {
+  const pages: (number | "...")[] = [];
+  if (totalPages <= 7) {
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+  pages.push(1);
+  if (currentPage > 4) {
+    pages.push("...");
+  }
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+  if (currentPage < totalPages - 3) {
+    pages.push("...");
+  }
+  pages.push(totalPages);
+  return pages;
+}
+
 export default function Home() {
   console.log("Home rendered");
   const [products, setProducts] = useState<Produk[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(5);
-
+  const [pageSize] = useState(10);
+  
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const pageNumbers = getPageNumbers(page, totalPages);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<ProductForm>(emptyForm);
@@ -184,7 +205,7 @@ export default function Home() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Products</CardTitle>
+            <CardTitle>Produk</CardTitle>
           </CardHeader>
           <div className="panel-header">
             <Input
@@ -196,7 +217,7 @@ export default function Home() {
               }}
             />
             <Button onClick={() => setShowModal(true)}>
-              Add Product
+              + Produk
             </Button>
             {/* <input
               className="search"
@@ -238,11 +259,9 @@ export default function Home() {
                 )}
               </TableBody>
             </Table>
-            
-
             <Pagination className="mt-4">
+              
                 <PaginationContent>
-
                   <PaginationItem>
                     <PaginationPrevious
                       href="#"
@@ -254,17 +273,29 @@ export default function Home() {
                       }}
                     />
                   </PaginationItem>
-
-                  <PaginationItem>
-                    <PaginationLink href="#" isActive>
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-
+                  {pageNumbers.map((item, index) => (
+                    <PaginationItem key={index}>
+                      {item === "..." ? (
+                        <PaginationEllipsis />
+                      ) : (
+                        <PaginationLink
+                          href="#"
+                          isActive={page === item}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage(item);
+                          }}
+                        >
+                          {item}
+                        </PaginationLink>
+                      )}
+                    </PaginationItem>
+                  ))}
                   <PaginationItem>
                     <PaginationNext
                       href="#"
                       onClick={(e) => {
+                        // loading(true)
                         e.preventDefault();
                         if (page < totalPages) {
                           setPage(page + 1);
@@ -272,14 +303,9 @@ export default function Home() {
                       }}
                     />
                   </PaginationItem>
-
+                  Total Produk {total}
                 </PaginationContent>
               </Pagination>
-
-
-
-
-
           </CardContent>
         </Card>
       </main>
