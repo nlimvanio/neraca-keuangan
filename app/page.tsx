@@ -38,6 +38,8 @@ async function getProducts() {
 export default function Home() {
   console.log("Home rendered");
   const [products, setProducts] = useState<Produk[]>([]);
+  const [loading, setLoading] = useState(true);
+  // setLoading(true);
   useEffect(() => {
     console.log("useEffect running");
     async function loadProducts() {
@@ -46,6 +48,7 @@ export default function Home() {
       if (data) {
         setProducts(data);
       }
+      setLoading(false);
     }
 
     loadProducts();
@@ -139,7 +142,13 @@ export default function Home() {
             <table>
               <thead><tr><th>Nama Produk</th><th>Harga</th><th>Barcode</th></tr></thead>
               <tbody>
-                {filteredProducts.length > 0 ? filteredProducts.map((product) => {
+                {loading ? (
+                  <tr>
+                    <td colSpan={3} className="text-center py-4">
+                      Loading products...
+                    </td>
+                  </tr>
+                ) : filteredProducts.length > 0 ? filteredProducts.map((product) => {
                   return (
                     <tr key={product.id}>
                       <td><strong>{product.name}</strong></td>
