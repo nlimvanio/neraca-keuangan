@@ -21,7 +21,7 @@ export default function Sidebar() {
             <Link
                 key={item.href}
                 href={item.href}
-                className={"block py-3 px-2.5 rounded-[0.5rem] text-9xl" + (isActive ? "bg-[#292c31] text-white" : "hover:bg-[#292c31] transition-colors duration-150")}
+                className={"block py-3 px-2.5 rounded-[0.5rem] text-xl md:text-base" + (isActive ? "bg-[#292c31] text-white" : "hover:bg-[#292c31] transition-colors duration-150")}
             >
                 {item.label}
             </Link>
@@ -73,7 +73,7 @@ export default function Sidebar() {
                 </div>
             </div>
             {/* Mobile Navigation */}
-            <nav className={("fixed top-16 bottom-0 right-0 left-0 p-5 sm:hidden bg-transparent backdrop-blur-md") + (mobileMenuOpen ? " flex flex-col gap-1.5 text-[#a7abb1] tracking-wide" : " hidden")}>
+            <nav className={("fixed top-16 bottom-0 right-0 left-0 p-5 sm:hidden bg-transparent backdrop-blur-md gap-2") + (mobileMenuOpen ? " flex flex-col gap-1.5 text-[#a7abb1] tracking-wide" : " hidden")}>
                 {navPages}
             </nav>
             {/* Desktop Navigation */}
