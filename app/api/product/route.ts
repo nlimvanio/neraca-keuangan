@@ -5,33 +5,81 @@ export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
 
-        const barcode = searchParams.get("barcode");
-        const name = searchParams.get("name");
-        const price = searchParams.get("price");
+        // const barcode = searchParams.get("barcode");
+        // const name = searchParams.get("name");
+        // const price = searchParams.get("price");
 
-        // Build SQL here
-        let sql = "SELECT * FROM core_product WHERE 1=1";
+
+        const page = Number(searchParams.get("page") ?? "1");
+        const pageSize = Number(searchParams.get("pageSize") ?? "10");
+        const search = searchParams.get("search");
+
+        const offset = (page - 1) * pageSize;
+        let where = "";
         const values: any[] = [];
 
-        if (barcode) {
-            sql += " AND barcode = ?";
-            values.push(barcode);
+        if (search) {
+            where = "WHERE name LIKE ? OR barcode LIKE ?";
+            values.push(`%${search}%`, `%${search}%`);
         }
+        // get product query
+        const dataSql = `
+            SELECT id, name, barcode, price
+            FROM core_product
+            ${where}
+            ORDER BY id ASC
+            LIMIT ?
+            OFFSET ?
+        `;
 
-        if (name) {
-            sql += " AND name LIKE ?";
-            values.push(`%${name}%`);
-        }
+        values.push(pageSize, offset);
 
-        if (price) {
-            sql += " AND price = ?";
-            values.push(price);
-        }
+        const [rows] = await pool.query(dataSql, values);
+
+        // get count total product query
+        const countSql = `
+            SELECT COUNT(*) AS total
+            FROM core_product
+            ${where}
+        `;
+
+        const countValues = search
+        ? [`%${search}%`, `%${search}%`]
+        : [];
+
+        const [countRows]: any = await pool.query(countSql, countValues);
+
+        return NextResponse.json({
+            data: rows,
+            page,
+            pageSize,
+            total: countRows[0].total,
+            totalPages: Math.ceil(countRows[0].total / pageSize),
+        });
+
+        // // Build SQL here
+        // let sql = "SELECT * FROM core_product WHERE 1=1";
+        // const values: any[] = [];
+
+        // if (barcode) {
+        //     sql += " AND barcode = ?";
+        //     values.push(barcode);
+        // }
+
+        // if (name) {
+        //     sql += " AND name LIKE ?";
+        //     values.push(`%${name}%`);
+        // }
+
+        // if (price) {
+        //     sql += " AND price = ?";
+        //     values.push(price);
+        // }
 
         // Execute SQL here
-        const [rows] = await pool.query(sql, values);
+        // const [rows] = await pool.query(sql, values);
 
-        return NextResponse.json(rows);
+        // return NextResponse.json(rows);
     } catch (error) {
         console.error(error);
         return NextResponse.json(
@@ -56,8 +104,8 @@ export async function POST(request: NextRequest) {
 
     const sql = `
       INSERT INTO core_product
-      (name, barcode, price)
-      VALUES (?, ?, ?)
+      (name, barcode, price, stock)
+      VALUES (?, ?, ?, 0)
     `;
 
     const [result]: any = await pool.query(sql, [
