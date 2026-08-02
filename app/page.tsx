@@ -46,6 +46,7 @@ interface Produk {
   name: string;
   price: string;
   barcode: string;
+  stock: number;
 }
 
 async function getProducts(
@@ -209,7 +210,7 @@ export default function Home() {
           </CardHeader>
           <div className="panel-header">
             <Input
-              placeholder="Search products..."
+              placeholder="Cari produk ... (Cth nama, barcode)"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -219,17 +220,11 @@ export default function Home() {
             <Button onClick={() => setShowModal(true)}>
               + Produk
             </Button>
-            {/* <input
-              className="search"
-              placeholder="Search products..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            /> */}
           </div>
 
           <CardContent>
             <Table>
-              <TableHeader><TableRow><TableHead>Nama Produk</TableHead><TableHead>Harga</TableHead><TableHead>Barcode</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Nama Produk</TableHead><TableHead>Harga</TableHead><TableHead>Barcode</TableHead><TableHead>Stok</TableHead></TableRow></TableHeader>
               <TableBody>
                 {loading ? (
                   (
@@ -239,10 +234,13 @@ export default function Home() {
                           <Skeleton className="h-4 w-40" />
                         </TableCell>
                         <TableCell>
+                          <Skeleton className="h-4 w-32" />
+                        </TableCell>
+                        <TableCell>
                           <Skeleton className="h-4 w-20" />
                         </TableCell>
                         <TableCell>
-                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-4 w-20" />
                         </TableCell>
                       </TableRow>
                     )))
@@ -252,6 +250,7 @@ export default function Home() {
                       <TableCell><strong>{product.name}</strong></TableCell>
                       <TableCell>Rp. {product.price}</TableCell>
                       <TableCell>{product.barcode}</TableCell>
+                      <TableCell>{product.stock}</TableCell>
                     </TableRow>
                   );
                 }) : (

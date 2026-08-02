@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
         }
         // get product query
         const dataSql = `
-            SELECT id, name, barcode, price
+            SELECT id, name, barcode, price, stock
             FROM core_product
             ${where}
             ORDER BY id ASC
