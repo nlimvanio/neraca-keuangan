@@ -471,6 +471,44 @@ tbody tr:last-child td {
     width: 30%;
 }
 
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-weight: 500;
+}
+
+.radio-group {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.radio-option {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: normal;
+  width: auto !important;
+}
+
+.radio-option input[type="radio"] {
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0;
+  flex-shrink: 0;
+}
+/* 
+.radio-option {
+  display: flex !important;
+  flex-direction: row !important;
+} */
+
 @media(max-width:900px) {
     .sidebar {
         width: 190px

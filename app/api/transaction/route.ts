@@ -1,6 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
 
+export async function GET(request: NextRequest) {
+    try {
+        const searchParams = request.nextUrl.searchParams;
+
+        const page = Number(searchParams.get("page") ?? "1");
+        const pageSize = Number(searchParams.get("pageSize") ?? "10");
+        const search = searchParams.get("search");
+
+        const offset = (page - 1) * pageSize;
+        let where = "";
+        const values: any[] = [];
+
+        if (search) {
+            where = "WHERE name LIKE ? OR barcode LIKE ?";
+            values.push(`%${search}%`, `%${search}%`);
+        }
+        // get transaction query
+        const dataSql = `
+            SELECT t.id, transaction_date, name, barcode, transaction_type, quantity, quantity * price as amount, cu.email as created_by
+            FROM transactions t
+            LEFT JOIN core_product cp ON cp.id = t.id_product 
+            LEFT JOIN core_user cu ON cu.id = t.created_by
+            ${where}
+            ORDER BY t.id DESC
+            LIMIT ?
+            OFFSET ?
+        `;
+
+        values.push(pageSize, offset);
+
+        const [rows] = await pool.query(dataSql, values);
+
+        // get count total transaction query
+        const countSql = `
+            SELECT COUNT(*) AS total
+            FROM transactions t
+            LEFT JOIN core_product cp ON cp.id = t.id_product 
+            ${where}
+        `;
+
+        const countValues = search
+        ? [`%${search}%`, `%${search}%`]
+        : [];
+
+        const [countRows]: any = await pool.query(countSql, countValues);
+
+        return NextResponse.json({
+            data: rows,
+            page,
+            pageSize,
+            total: countRows[0].total,
+            totalPages: Math.ceil(countRows[0].total / pageSize),
+        });
+
+    } catch (error) {
+        console.error(error);
+        return NextResponse.json(
+            { message: "Internal Server Error" },
+            { status: 500 }
+        );
+    }
+}
+
 export async function POST(request: NextRequest) {
   const connection = await pool.getConnection();
   try {
