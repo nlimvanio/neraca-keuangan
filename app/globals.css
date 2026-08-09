@@ -503,11 +503,11 @@ tbody tr:last-child td {
   margin: 0;
   flex-shrink: 0;
 }
-/* 
-.radio-option {
-  display: flex !important;
-  flex-direction: row !important;
-} */
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 @media(max-width:900px) {
     .sidebar {

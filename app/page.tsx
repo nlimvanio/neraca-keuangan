@@ -97,6 +97,7 @@ export default function Home() {
   console.log("Home rendered");
   const [products, setProducts] = useState<Produk[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   
@@ -149,6 +150,7 @@ export default function Home() {
     event.preventDefault();
 
     try {
+      setIsSubmitting(true);
       const res = await fetch("/api/product", {
         method: "POST",
         headers: {
@@ -187,6 +189,8 @@ export default function Home() {
     } catch (err) {
       console.error(err);
       alert("Failed to save product");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -265,6 +269,7 @@ export default function Home() {
                     <PaginationPrevious
                       href="#"
                       onClick={(e) => {
+                        setLoading(true);
                         e.preventDefault();
                         if (page > 1) {
                           setPage(page - 1);
@@ -281,6 +286,7 @@ export default function Home() {
                           href="#"
                           isActive={page === item}
                           onClick={(e) => {
+                            setLoading(true);
                             e.preventDefault();
                             setPage(item);
                           }}
@@ -294,7 +300,7 @@ export default function Home() {
                     <PaginationNext
                       href="#"
                       onClick={(e) => {
-                        // loading(true)
+                        setLoading(true);
                         e.preventDefault();
                         if (page < totalPages) {
                           setPage(page + 1);
@@ -324,8 +330,8 @@ export default function Home() {
                 <label>Barcode<input required value={form.barcode} onChange={(e) => updateForm("barcode", e.target.value)} placeholder="e.g. BDE-0817" /></label>
               </div>
               <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="button primary">Add Product</button>
+                <button type="button" className="button secondary" onClick={() => setShowModal(false)}>Batal</button>
+                <button type="submit" className="button primary" disabled={isSubmitting}>{isSubmitting ? "Menyimpan..." : "Simpan"}</button>
               </div>
             </form>
           </div>

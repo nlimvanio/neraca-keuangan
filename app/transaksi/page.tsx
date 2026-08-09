@@ -110,6 +110,7 @@ export default function Home() {
   console.log("Home rendered");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   
@@ -210,6 +211,7 @@ export default function Home() {
     event.preventDefault();
 
     try {
+      setIsSubmitting(true);
       const res = await fetch("/api/transaction", {
         method: "POST",
         headers: {
@@ -223,8 +225,9 @@ export default function Home() {
         }),
       });
 
+      const response = await res.json();
       if (!res.ok) {
-        throw new Error("Failed to save transaction");
+        throw new Error(response.message || "Failed to save transaction.");
       }
 
       const result = await res.json();
@@ -254,7 +257,13 @@ export default function Home() {
 
     } catch (err) {
       console.error(err);
-      alert("Failed to save transaction.");
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Failed to save transaction."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -346,12 +355,12 @@ export default function Home() {
               </TableBody>
             </Table>
             <Pagination className="mt-4">
-              
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
                       href="#"
                       onClick={(e) => {
+                        setLoading(true);
                         e.preventDefault();
                         if (page > 1) {
                           setPage(page - 1);
@@ -368,6 +377,7 @@ export default function Home() {
                           href="#"
                           isActive={page === item}
                           onClick={(e) => {
+                            setLoading(true);
                             e.preventDefault();
                             setPage(item);
                           }}
@@ -381,7 +391,7 @@ export default function Home() {
                     <PaginationNext
                       href="#"
                       onClick={(e) => {
-                        // loading(true)
+                        setLoading(true);
                         e.preventDefault();
                         if (page < totalPages) {
                           setPage(page + 1);
@@ -429,7 +439,7 @@ export default function Home() {
                     <div className="product-dropdown">
                       {productLoading ? (
                         <div className="product-option">
-                          Searching...
+                          Mencari...
                         </div>
                       ) : productResults.length > 0 ? (
                         productResults.map((product) => (
@@ -491,8 +501,8 @@ export default function Home() {
                 <label>Diinput<input required value={form.created_by} onChange={(e) => updateForm("created_by", e.target.value)} placeholder="e.g. BDE-0817" /></label>
               </div>
               <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="button primary">Simpan</button>
+                <button type="button" className="button secondary" onClick={() => setShowModal(false)}>Batal</button>
+                <button type="submit" className="button primary" disabled={isSubmitting}>{isSubmitting ? "Menyimpan..." : "Simpan"}</button>
               </div>
             </form>
           </div>
