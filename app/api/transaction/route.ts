@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import pool from "@/lib/db";
+import { decrypt } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
     try {
@@ -72,9 +74,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     let method = "";
 
-    const { id_product, transaction_type, quantity, created_by } = body;
+    const { id_product, transaction_type, quantity } = body;
 
-    if (!id_product || !transaction_type || quantity == null || created_by == null) {
+    const token = (await cookies()).get("session")?.value;
+    const created_by = decrypt(token);
+    
+    if (!id_product || !transaction_type || quantity == null) {
       return NextResponse.json(
         { message: "Missing required fields" },
         { status: 400 }

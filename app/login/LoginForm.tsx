@@ -7,6 +7,7 @@ import { login } from "./action";
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setLoading] = useState(false);
   const [state, loginAction] = useActionState(login, undefined);
 
   return (
@@ -50,7 +51,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <button disabled={pending} type="submit" className="button primary">
-      Login
+      {pending ? "Logging in..." : "Login"}
     </button>
   );
 }
