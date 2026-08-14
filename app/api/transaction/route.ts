@@ -77,8 +77,7 @@ export async function POST(request: NextRequest) {
     const { id_product, transaction_type, quantity } = body;
 
     const token = (await cookies()).get("session")?.value;
-    const created_by = decrypt(token);
-    
+    const created_by = (await decrypt(token))?.userId;
     if (!id_product || !transaction_type || quantity == null) {
       return NextResponse.json(
         { message: "Missing required fields" },
