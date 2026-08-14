@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -7,7 +7,6 @@ import { login } from "./action";
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setLoading] = useState(false);
   const [state, loginAction] = useActionState(login, undefined);
 
   return (
