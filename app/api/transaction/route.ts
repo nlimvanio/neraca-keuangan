@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         }
         // get transaction query
         const dataSql = `
-            SELECT t.id, transaction_date, name, barcode, transaction_type, quantity, quantity * price as amount, cu.email as created_by
+            SELECT t.id, transaction_date, cp.name, barcode, transaction_type, quantity, quantity * price as amount, cu.email as created_by
             FROM transactions t
             LEFT JOIN core_product cp ON cp.id = t.id_product 
             LEFT JOIN core_user cu ON cu.id = t.created_by

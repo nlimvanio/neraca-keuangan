@@ -127,6 +127,10 @@ export default function Home() {
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [productLoading, setProductLoading] = useState(false);
 
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [exporting, setExporting] = useState(false);
+
   const offset = (page - 1) * pageSize;
   // setLoading(true);
   useEffect(() => {
@@ -267,13 +271,39 @@ export default function Home() {
     }
   }
 
+  async function handleExport() {
+    if (!startDate || !endDate) {
+      alert("Please select the transaction date range.");
+      return;
+    }
+
+    if (startDate > endDate) {
+      alert("Start date cannot be after end date.");
+      return;
+    }
+
+    try {
+      setExporting(true);
+
+      const url =
+        `/api/transaction/export` +
+        `?startDate=${encodeURIComponent(startDate)}` +
+        `&endDate=${encodeURIComponent(endDate)}`;
+
+      window.location.href = url;
+
+    } catch (error) {
+      console.error(error);
+      alert("Failed to generate Excel.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="app-shell">
       <Sidebar />
-
       <main className="main">
-        
-
         <Card>
           <CardHeader>
             <CardTitle>Transaksi</CardTitle>
@@ -290,6 +320,29 @@ export default function Home() {
             <Button onClick={() => setShowModal(true)}>
               + Transaksi
             </Button>
+          </div>
+
+          <div className="panel-header">
+            <label>From</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+            <label>To</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+            <button
+              type="button"
+              className="button primary"
+              disabled={exporting}
+              onClick={handleExport}
+            >
+              {exporting ? "Generating..." : "Export Excel"}
+            </button>
           </div>
 
           <CardContent>
