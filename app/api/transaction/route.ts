@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         }
         // get transaction query
         const dataSql = `
-            SELECT t.id, transaction_date, cp.name, barcode, transaction_type, quantity, quantity * price as amount, cu.email as created_by
+            SELECT t.id, transaction_date, cp.name, barcode, transaction_type, quantity, amount, cu.name as created_by
             FROM transactions t
             LEFT JOIN core_product cp ON cp.id = t.id_product 
             LEFT JOIN core_user cu ON cu.id = t.created_by
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     const sql = `
-      SELECT stock`+method+quantity+` as stock FROM core_product WHERE id = `+id_product;
+      SELECT stock`+method+quantity+` as stock, price FROM core_product WHERE id = `+id_product;
 
     const [result]: any = await connection.query(sql, [
       id_product
@@ -107,14 +107,15 @@ export async function POST(request: NextRequest) {
 
     const sql2 = `
       INSERT INTO transactions
-      (transaction_date, id_product, transaction_type, quantity, created_by)
-      VALUES (NOW(), ?, ?, ?, ?)
+      (transaction_date, id_product, transaction_type, quantity, amount, created_by)
+      VALUES (NOW(), ?, ?, ?, ?, ?)
     `;
 
     const [result2]: any = await connection.query(sql2, [
       id_product,
       transaction_type,
       quantity,
+      quantity*result[0].price,
       created_by
     ]);
 

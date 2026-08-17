@@ -234,9 +234,7 @@ export default function Home() {
         throw new Error(response.message || "Failed to save transaction.");
       }
 
-      const result = await res.json();
-
-      console.log("Transaction created:", result);
+      console.log("Transaction created:", response);
 
       // Reload table
       const data = await getTransactions(
