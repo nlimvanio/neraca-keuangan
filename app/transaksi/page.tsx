@@ -270,6 +270,17 @@ export default function Home() {
   }
 
   async function handleExport() {
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24) + 1;
+    if (diffDays > 31) {
+      alert("The maximum export date range is 30 days.");
+      return;
+    }
+
     if (!startDate || !endDate) {
       alert("Please select the transaction date range.");
       return;
