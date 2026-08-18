@@ -168,6 +168,15 @@ export default function Home() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  async function refreshTransactions(){
+    const data = await getTransactions(page, pageSize, search);
+    if (data) {
+      setTransactions(data.data);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+    }
+  }
+
   useEffect(() => {
     if (selectedProduct) {
       return;
@@ -224,8 +233,7 @@ export default function Home() {
         body: JSON.stringify({
           id_product: form.id_product,
           transaction_type: form.transaction_type,
-          quantity: form.quantity,
-          created_by: form.created_by,
+          quantity: form.quantity
         }),
       });
 
@@ -237,15 +245,7 @@ export default function Home() {
       console.log("Transaction created:", response);
 
       // Reload table
-      const data = await getTransactions(
-        page,
-        pageSize,
-        search);
-      if (data) {
-        setTransactions(data.data);
-        setTotal(data.total);
-        setTotalPages(data.totalPages);
-      }
+      await refreshTransactions();
 
       // Clear form
 
@@ -309,6 +309,22 @@ export default function Home() {
     }
   }
 
+  async function handleDelete(transactionId: number){
+    
+    try{
+      setLoading(true);
+      const deleteUrl = `api/transaction/${transactionId}`
+
+      await fetch(deleteUrl, {method:"DELETE"});
+    } catch(error){
+      console.error(error);
+      alert("Failed to delete transaction");
+    } finally {
+      await refreshTransactions();
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="app-shell">
       <Sidebar />
@@ -356,7 +372,7 @@ export default function Home() {
 
           <CardContent>
             <Table>
-              <TableHeader><TableRow><TableHead>Tanggal Transaksi</TableHead><TableHead>Nama Barang</TableHead><TableHead>Tipe Transaksi</TableHead><TableHead>Jumlah Barang</TableHead><TableHead>Nilai Transaksi</TableHead><TableHead>Diinput</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Tanggal Transaksi</TableHead><TableHead>Nama Barang</TableHead><TableHead>Tipe Transaksi</TableHead><TableHead>Jumlah Barang</TableHead><TableHead>Nilai Transaksi</TableHead><TableHead>Hapus</TableHead></TableRow></TableHeader>
               <TableBody>
                 {loading ? (
                   (
@@ -408,7 +424,7 @@ export default function Home() {
                       </TableCell>
                       <TableCell>{transaction.quantity}</TableCell>
                       <TableCell>Rp. {transaction.amount}</TableCell>
-                      <TableCell>{transaction.created_by}</TableCell>
+                      <TableCell><button className="button rounded-md bg-red-500 text-center text-white hover:bg-red-600" onClick={()=>handleDelete(transaction.id)}>Delete</button></TableCell>
                     </TableRow>
                   );
                 }) : (
@@ -560,7 +576,6 @@ export default function Home() {
                   </div>
                 </div>
                 <label>Jumlah Barang<input required value={form.quantity} onChange={(e) => updateForm("quantity", e.target.value)}/></label>
-                <label>Diinput<input required value={form.created_by} onChange={(e) => updateForm("created_by", e.target.value)} placeholder="e.g. BDE-0817" /></label>
               </div>
               <div className="modal-actions">
                 <button type="button" className="button secondary" onClick={() => setShowModal(false)}>Batal</button>
