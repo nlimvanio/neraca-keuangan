@@ -65,11 +65,13 @@ interface Product {
 async function getTransactions(
   page: number,
   pageSize: number,
-  search: string) {
+  search: string,
+  userId: string) {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
         pageSize: pageSize.toString(),
+        userId: userId,
       });
       if (search.trim()) {
         params.append("search", search);
@@ -113,6 +115,9 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
+
+  // tambah get user id
+  const [userId] = "1";
   
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -140,7 +145,8 @@ export default function Home() {
       const result = await getTransactions(
         page,
         pageSize,
-        search
+        search,
+        userId
       );
       if (result) {
         setTransactions(result.data);
@@ -169,7 +175,7 @@ export default function Home() {
   }
 
   async function refreshTransactions(){
-    const data = await getTransactions(page, pageSize, search);
+    const data = await getTransactions(page, pageSize, search, userId);
     if (data) {
       setTransactions(data.data);
       setTotal(data.total);
