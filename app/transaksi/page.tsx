@@ -28,6 +28,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { cookies } from "next/headers";
 
 type TransactionForm = {
   id_product: string;
@@ -65,13 +66,11 @@ interface Product {
 async function getTransactions(
   page: number,
   pageSize: number,
-  search: string,
-  userId: string) {
+  search: string) {
     try {
       const params = new URLSearchParams({
         page: page.toString(),
-        pageSize: pageSize.toString(),
-        userId: userId,
+        pageSize: pageSize.toString()
       });
       if (search.trim()) {
         params.append("search", search);
@@ -117,7 +116,7 @@ export default function Home() {
   const [pageSize] = useState(10);
 
   // tambah get user id
-  const [userId] = "1";
+  // const [userId] = "1";
   
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -145,8 +144,7 @@ export default function Home() {
       const result = await getTransactions(
         page,
         pageSize,
-        search,
-        userId
+        search
       );
       if (result) {
         setTransactions(result.data);
@@ -175,7 +173,7 @@ export default function Home() {
   }
 
   async function refreshTransactions(){
-    const data = await getTransactions(page, pageSize, search, userId);
+    const data = await getTransactions(page, pageSize, search);
     if (data) {
       setTransactions(data.data);
       setTotal(data.total);

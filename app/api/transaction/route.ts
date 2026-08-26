@@ -9,12 +9,17 @@ export async function GET(request: NextRequest) {
 
         const page = Number(searchParams.get("page") ?? "1");
         const pageSize = Number(searchParams.get("pageSize") ?? "10");
-        const userId = searchParams.get("userId");
         const search = searchParams.get("search");
 
         const offset = (page - 1) * pageSize;
         let where = "";
         const values: any[] = [];
+
+        //Get userId
+        const cookieStore = await cookies();
+        const cookie = cookieStore.get("session")?.value;
+        const dec = await decrypt(cookie);
+        const userId = dec ? dec.userId : "";
 
         values.push(userId);
         
