@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         const userId = dec ? dec.userId : "";
 
         values.push(userId);
-        
+
         if (search) {
             where = "AND (cp.name LIKE ? OR barcode LIKE ?)";
             values.push(`%${search}%`, `%${search}%`);
@@ -86,6 +86,11 @@ export async function POST(request: NextRequest) {
 
     const token = (await cookies()).get("session")?.value;
     const created_by = (await decrypt(token))?.userId;
+    const cookieStore = await cookies();
+    const cookie = cookieStore.get("session")?.value;
+    const dec = await decrypt(cookie);
+    const userId = dec ? dec.userId : "";
+
     if (!product_id || !transaction_type || quantity == null) {
       return NextResponse.json(
         { message: "Missing required fields" },
@@ -101,9 +106,9 @@ export async function POST(request: NextRequest) {
     }
 
     const sql = `
-      SELECT stock`+method+quantity+` as stock, price FROM core_product WHERE id = `+product_id;
-
+      SELECT cp.id AS product_id, cp.price, COALESCE(sb.stock`+method+quantity+`, 0) AS stock, ub.branch_id FROM core_product cp LEFT JOIN user_branch ub ON ub.user_id = `+1+` LEFT JOIN stock_branch sb ON sb.product_id = cp.id AND sb.branch_id = ub.branch_id WHERE cp.id =`+ product_id;
     const [result]: any = await connection.query(sql, [
+      userId,
       product_id
     ]);
 
@@ -115,8 +120,8 @@ export async function POST(request: NextRequest) {
 
     const sql2 = `
       INSERT INTO transactions
-      (transaction_date, product_id, transaction_type, quantity, amount, created_by)
-      VALUES (NOW(), ?, ?, ?, ?, ?)
+      (transaction_date, product_id, transaction_type, quantity, amount, created_by, branch_id)
+      VALUES (NOW(), ?, ?, ?, ?, ?, ?)
     `;
 
     const [result2]: any = await connection.query(sql2, [
@@ -124,11 +129,12 @@ export async function POST(request: NextRequest) {
       transaction_type,
       quantity,
       quantity*result[0].price,
-      created_by
+      created_by,
+      result[0].branch_id
     ]);
 
     const sql3 = `
-      UPDATE core_product SET stock = stock`+method+quantity+` WHERE id = `+product_id;
+      UPDATE stock_branch SET stock = stock`+method+quantity+` WHERE product_id = `+product_id +` AND branch_id = `+result[0].branch_id;
 
     const [result3]: any = await connection.query(sql3, [
       product_id,

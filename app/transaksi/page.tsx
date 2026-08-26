@@ -235,7 +235,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id_product: form.id_product,
+          product_id: form.id_product,
           transaction_type: form.transaction_type,
           quantity: form.quantity
         }),
