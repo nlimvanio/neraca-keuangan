@@ -138,7 +138,7 @@ export default function Home() {
   const offset = (page - 1) * pageSize;
   // setLoading(true);
   useEffect(() => {
-    console.log("useEffect running");
+    console.log("useEffect running"); 
     async function loadTransactions() {
       console.log("Calling getTransaction()");
       const result = await getTransactions(
@@ -442,9 +442,9 @@ export default function Home() {
                     <PaginationPrevious
                       href="#"
                       onClick={(e) => {
-                        setLoading(true);
                         e.preventDefault();
                         if (page > 1) {
+                          setLoading(true);
                           setPage(page - 1);
                         }
                       }}
@@ -459,9 +459,11 @@ export default function Home() {
                           href="#"
                           isActive={page === item}
                           onClick={(e) => {
-                            setLoading(true);
                             e.preventDefault();
-                            setPage(item);
+                            if(page !== item){
+                              setLoading(true);
+                              setPage(item);
+                            }
                           }}
                         >
                           {item}
@@ -473,9 +475,9 @@ export default function Home() {
                     <PaginationNext
                       href="#"
                       onClick={(e) => {
-                        setLoading(true);
                         e.preventDefault();
                         if (page < totalPages) {
+                          setLoading(true);
                           setPage(page + 1);
                         }
                       }}
