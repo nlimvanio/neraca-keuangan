@@ -3,16 +3,16 @@
 import z from "zod";
 import { createSession, deleteSession } from "lib/session";
 import { redirect } from "next/navigation";
-import {verify} from "argon2"
+import { verify } from "argon2"
 import pool from "@/lib/db"
 import { RowDataPacket } from "mysql2";
 
 const loginSchema = z.object({
-    email: z.string().email({message: "Invalid email address"}),
-    password: z.string().min(6, {message: "Password must be at least 6 characters long"})
+    email: z.string().email({ message: "Invalid email address" }),
+    password: z.string().min(6, { message: "Password must be at least 6 characters long" })
 })
 
-interface UserRow extends RowDataPacket{
+interface UserRow extends RowDataPacket {
     id: number,
     email: string;
     password: string
@@ -24,14 +24,14 @@ export async function login(prevState: any, formData: FormData) {
     const result = loginSchema.safeParse(Object.fromEntries(formData.entries()));
 
     //If validation fails, return the errors to the form
-    if(!result.success){
+    if (!result.success) {
         return {
             errors: result.error.flatten().fieldErrors
         }
     }
 
     //If validation succeeds, check the credentials correctness
-    const {email, password} = result.data;
+    const { email, password } = result.data;
 
     //Searhc for user
     const sql = "SELECT id, email, password FROM core_user WHERE email = ? LIMIT 1";
@@ -40,20 +40,21 @@ export async function login(prevState: any, formData: FormData) {
         [email]
     );
 
-    const user = rows[0];
 
     //If user is not found, then email is invalid
-    if(!user){
+    if (!rows || rows.length === 0) {
         return {
-            errors : {password: ["Invalid email or password"]}
+            errors: { password: ["Invalid email or password"] }
         }
     }
 
+    const user = rows[0];
+
     //Check credentials valid or not
     const isValid = await verify(user.password, password);
-    if(!isValid){
+    if (!isValid) {
         return {
-            errors : {password: ["Invalid email or password"]}
+            errors: { password: ["Invalid email or password"] }
         }
     } else {
         await createSession(String(user.id));

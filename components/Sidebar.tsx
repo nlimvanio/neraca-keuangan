@@ -9,7 +9,7 @@ const navItems = [
     { href: "/penjualan", label: "Penjualan" },
     { href: "/penerimaan", label: "Penerimaan" },
     { href: "/summary", label: "Summary" },
-    { href: "/test", label: "Test" }
+    { href: "/test", label: "Test" },
 ]
 
 export default function Sidebar() {

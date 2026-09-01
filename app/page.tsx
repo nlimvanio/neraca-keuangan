@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { FormEvent, useMemo, useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
@@ -53,20 +53,20 @@ async function getProducts(
   page: number,
   pageSize: number,
   search: string) {
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: pageSize.toString(),
-      });
-      if (search.trim()) {
-        params.append("search", search);
-      }
-      const res = await fetch(`/api/product?${params}`);
-      const data = await res.json();
-      return data;
-    } catch (err) {
-      console.error(err);
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    });
+    if (search.trim()) {
+      params.append("search", search);
     }
+    const res = await fetch(`/api/product?${params}`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function getPageNumbers(currentPage: number, totalPages: number) {
@@ -100,7 +100,7 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
-  
+
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const pageNumbers = getPageNumbers(page, totalPages);
@@ -146,7 +146,16 @@ export default function Home() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {    
+  async function refreshProducts() {
+    const data = await getProducts(page, pageSize, search);
+    if (data) {
+      setProducts(data.data);
+      setTotal(data.total);
+      setTotalPages(data.totalPages);
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     try {
@@ -194,6 +203,23 @@ export default function Home() {
     }
   }
 
+  async function handleDeleteProduct(barcode: string) {
+
+    try {
+      setLoading(true);
+      const deleteUrl = `/api/product/${barcode}`
+
+      await fetch(deleteUrl, { method: "DELETE" });
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete product");
+    } finally {
+      await refreshProducts();
+      setLoading(false);
+    }
+  }
+
+
   return (
     <div className="app-shell">
       <Sidebar />
@@ -228,7 +254,7 @@ export default function Home() {
 
           <CardContent>
             <Table>
-              <TableHeader><TableRow><TableHead>Nama Produk</TableHead><TableHead>Harga</TableHead><TableHead>Barcode</TableHead><TableHead>Stok</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Nama Produk</TableHead><TableHead>Harga</TableHead><TableHead>Barcode</TableHead><TableHead>Stok</TableHead><TableHead>Hapus</TableHead></TableRow></TableHeader>
               <TableBody>
                 {loading ? (
                   (
@@ -246,6 +272,9 @@ export default function Home() {
                         <TableCell>
                           <Skeleton className="h-4 w-20" />
                         </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
                       </TableRow>
                     )))
                 ) : filteredProducts.length > 0 ? filteredProducts.map((product) => {
@@ -255,6 +284,7 @@ export default function Home() {
                       <TableCell>Rp. {product.price}</TableCell>
                       <TableCell>{product.barcode}</TableCell>
                       <TableCell>{product.stock}</TableCell>
+                      <TableCell><button className="button rounded-md bg-red-500 text-center text-white hover:bg-red-600" onClick={() => handleDeleteProduct(product.barcode)}>Hapus</button></TableCell>
                     </TableRow>
                   );
                 }) : (
@@ -263,54 +293,54 @@ export default function Home() {
               </TableBody>
             </Table>
             <Pagination className="mt-4">
-              
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        setLoading(true);
-                        e.preventDefault();
-                        if (page > 1) {
-                          setPage(page - 1);
-                        }
-                      }}
-                    />
+
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      setLoading(true);
+                      e.preventDefault();
+                      if (page > 1) {
+                        setPage(page - 1);
+                      }
+                    }}
+                  />
+                </PaginationItem>
+                {pageNumbers.map((item, index) => (
+                  <PaginationItem key={index}>
+                    {item === "..." ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        href="#"
+                        isActive={page === item}
+                        onClick={(e) => {
+                          setLoading(true);
+                          e.preventDefault();
+                          setPage(item);
+                        }}
+                      >
+                        {item}
+                      </PaginationLink>
+                    )}
                   </PaginationItem>
-                  {pageNumbers.map((item, index) => (
-                    <PaginationItem key={index}>
-                      {item === "..." ? (
-                        <PaginationEllipsis />
-                      ) : (
-                        <PaginationLink
-                          href="#"
-                          isActive={page === item}
-                          onClick={(e) => {
-                            setLoading(true);
-                            e.preventDefault();
-                            setPage(item);
-                          }}
-                        >
-                          {item}
-                        </PaginationLink>
-                      )}
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        setLoading(true);
-                        e.preventDefault();
-                        if (page < totalPages) {
-                          setPage(page + 1);
-                        }
-                      }}
-                    />
-                  </PaginationItem>
-                  Total Produk {total}
-                </PaginationContent>
-              </Pagination>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      setLoading(true);
+                      e.preventDefault();
+                      if (page < totalPages) {
+                        setPage(page + 1);
+                      }
+                    }}
+                  />
+                </PaginationItem>
+                Total Produk {total}
+              </PaginationContent>
+            </Pagination>
           </CardContent>
         </Card>
       </main>
@@ -338,5 +368,5 @@ export default function Home() {
         </div>
       )}
     </div>
-  );
+  )
 }
