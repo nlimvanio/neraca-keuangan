@@ -75,7 +75,7 @@ async function getTransactions(
       if (search.trim()) {
         params.append("search", search);
       }
-      const res = await fetch(`/api/transaction?${params}`);
+      const res = await fetch(`/api/transaction/hutang?${params}`);
       const data = await res.json();
       return data;
     } catch (err) {
@@ -168,10 +168,6 @@ export default function Home() {
     );
   }, [transactions, search]);
 
-  function updateForm(field: keyof TransactionForm, value: string) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
   async function refreshTransactions(){
     const data = await getTransactions(page, pageSize, search);
     if (data) {
@@ -235,7 +231,7 @@ export default function Home() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          product_id: form.id_product,
+          id_product: form.id_product,
           transaction_type: form.transaction_type,
           quantity: form.quantity
         }),
@@ -489,108 +485,6 @@ export default function Home() {
           </CardContent>
         </Card>
       </main>
-
-      {showModal && (
-        <div className="modal-backdrop" onMouseDown={() => setShowModal(false)}>
-          <div className="modal" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="modal-header">
-              <div><h2>Buat Transaksi</h2><p className="muted">Masukkan transaksi atas pembelian atau penjualan barang.</p></div>
-              <button className="close-button" onClick={() => setShowModal(false)} aria-label="Close">×</button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="form-grid">
-                <div className="product-select">
-                  <label>Produk</label>
-                  <input
-                    required
-                    type="text"
-                    value={productSearch}
-                    placeholder="Cari produk (nama, barcode)..."
-                    onFocus={() => {
-                      if (productResults.length > 0) {
-                        setShowProductDropdown(true);
-                      }
-                    }}
-                    onChange={(e) => {
-                      setProductSearch(e.target.value);
-                      setShowProductDropdown(true);
-                      setSelectedProduct(null);
-                    }}
-                  />
-
-                  {showProductDropdown && (
-                    <div className="product-dropdown">
-                      {productLoading ? (
-                        <div className="product-option">
-                          Mencari...
-                        </div>
-                      ) : productResults.length > 0 ? (
-                        productResults.map((product) => (
-                          <div
-                            key={product.id}
-                            className="product-option"
-                            onMouseDown={() => {
-                              console.log("Selected product:", product);
-
-                              setSelectedProduct(product);
-                              setProductSearch(product.name);
-                              setShowProductDropdown(false);
-
-                              updateForm("id_product", product.id.toString());
-                            }}
-                          >
-                            <strong>{product.name}</strong> | <small>{product.barcode}</small>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="product-option">
-                          No product found
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="form-field">
-                  <label>Jenis Transaksi</label>
-                  <div className="radio-group">
-                    <label className="radio-option">
-                      <input
-                        type="radio"
-                        name="transaction_type"
-                        value="I"
-                        checked={form.transaction_type === "I"}
-                        onChange={(e) =>
-                          updateForm("transaction_type", e.target.value)
-                        }
-                      />
-                      <span>Beli</span>
-                    </label>
-
-                    <label className="radio-option">
-                      <input
-                        type="radio"
-                        name="transaction_type"
-                        value="O"
-                        checked={form.transaction_type === "O"}
-                        onChange={(e) =>
-                          updateForm("transaction_type", e.target.value)
-                        }
-                      />
-                      <span>Jual</span>
-                    </label>
-                  </div>
-                </div>
-                <label>Jumlah Barang<input required value={form.quantity} onChange={(e) => updateForm("quantity", e.target.value)}/></label>
-              </div>
-              <div className="modal-actions">
-                <button type="button" className="button secondary" onClick={() => setShowModal(false)}>Batal</button>
-                <button type="submit" className="button primary" disabled={isSubmitting}>{isSubmitting ? "Menyimpan..." : "Simpan"}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -52,11 +52,13 @@ interface Produk {
 async function getProducts(
   page: number,
   pageSize: number,
-  search: string) {
+  search: string,
+  userId: string) {
   try {
     const params = new URLSearchParams({
       page: page.toString(),
       pageSize: pageSize.toString(),
+      userId: userId,
     });
     if (search.trim()) {
       params.append("search", search);
@@ -68,6 +70,7 @@ async function getProducts(
     console.error(err);
   }
 }
+
 
 function getPageNumbers(currentPage: number, totalPages: number) {
   const pages: (number | "...")[] = [];
@@ -101,6 +104,9 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
+  //tambah get user id
+  const [userId] = "1";
+
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const pageNumbers = getPageNumbers(page, totalPages);
@@ -118,7 +124,8 @@ export default function Home() {
       const result = await getProducts(
         page,
         pageSize,
-        search
+        search,
+        userId
       );
       if (result) {
         setProducts(result.data);
@@ -147,7 +154,7 @@ export default function Home() {
   }
 
   async function refreshProducts() {
-    const data = await getProducts(page, pageSize, search);
+    const data = await getProducts(page, pageSize, search, userId);
     if (data) {
       setProducts(data.data);
       setTotal(data.total);
@@ -184,7 +191,8 @@ export default function Home() {
       const data = await getProducts(
         page,
         pageSize,
-        search);
+        search,
+        userId);
       if (data) {
         setProducts(data.data);
         setTotal(data.total);
@@ -333,6 +341,56 @@ export default function Home() {
                       setLoading(true);
                       e.preventDefault();
                       if (page < totalPages) {
+                        setPage(page + 1);
+                      }
+                    }}
+                  />
+                </PaginationItem>
+                Total Produk {total}
+              </PaginationContent>
+            </Pagination>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (page > 1) {
+                        setLoading(true);
+                        setPage(page - 1);
+                      }
+                    }}
+                  />
+                </PaginationItem>
+                {pageNumbers.map((item, index) => (
+                  <PaginationItem key={index}>
+                    {item === "..." ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        href="#"
+                        isActive={page === item}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page !== item) {
+                            setLoading(true);
+                            setPage(item);
+                          }
+                        }}
+                      >
+                        {item}
+                      </PaginationLink>
+                    )}
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (page < totalPages) {
+                        setLoading(true);
                         setPage(page + 1);
                       }
                     }}

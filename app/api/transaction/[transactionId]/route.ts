@@ -22,9 +22,9 @@ export async function DELETE(
 
 
         const selectProductSql = `
-        SELECT t.quantity, t.id_product, t.transaction_type
+        SELECT t.quantity, t.product_id, t.transaction_type
         FROM transactions t
-        LEFT OUTER JOIN core_product cp ON cp.id = t.id_product
+        LEFT OUTER JOIN core_product cp ON cp.id = t.product_id
         WHERE t.id = ?
         FOR UPDATE
         `;
@@ -43,7 +43,7 @@ export async function DELETE(
             )
         };
 
-        const {quantity, id_product, transaction_type} = rows[0]
+        const {quantity, product_id, transaction_type} = rows[0]
 
         const updateProductSql = `
         UPDATE core_product cp
@@ -55,7 +55,7 @@ export async function DELETE(
 
         await connection.query({
             sql: updateProductSql,
-            values: [stockChange, id_product]
+            values: [stockChange, product_id]
         });
 
         const deleteSql = `

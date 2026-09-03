@@ -7,20 +7,31 @@ export async function GET(request: NextRequest) {
 
         const page = Number(searchParams.get("page") ?? "1");
         const pageSize = Number(searchParams.get("pageSize") ?? "10");
+        const userId = searchParams.get("userId");
         const search = searchParams.get("search");
 
         const offset = (page - 1) * pageSize;
         let where = "";
         const values: any[] = [];
 
-        if (search) {
-            where = "WHERE name LIKE ? OR barcode LIKE ?";
+        if(userId){
+            where = "WHERE ub.user_id = ?";
+            values.push(userId);
+            if(search){
+              where = "WHERE ub.user_id = ? AND (name LIKE ? OR barcode LIKE ?)";
+              values.push(`%${search}%`, `%${search}%`);
+            }
+        }
+        else if(search){
+            where = "WHERE (name LIKE ? OR barcode LIKE ?)";
             values.push(`%${search}%`, `%${search}%`);
         }
         // get product query
         const dataSql = `
-            SELECT id, name, barcode, price, stock
-            FROM core_product
+            SELECT id, name, barcode, price, sb.stock
+            FROM core_product cp
+            LEFT JOIN stock_branch sb ON sb.product_id = cp.id
+            LEFT JOIN user_branch ub ON ub.branch_id = sb.branch_id 
             ${where}
             ORDER BY id ASC
             LIMIT ?
@@ -34,15 +45,13 @@ export async function GET(request: NextRequest) {
         // get count total product query
         const countSql = `
             SELECT COUNT(*) AS total
-            FROM core_product
+            FROM core_product cp
+            LEFT JOIN stock_branch sb ON sb.product_id = cp.id
+            LEFT JOIN user_branch ub ON ub.branch_id = sb.branch_id 
             ${where}
         `;
 
-        const countValues = search
-        ? [`%${search}%`, `%${search}%`]
-        : [];
-
-        const [countRows]: any = await pool.query(countSql, countValues);
+        const [countRows]: any = await pool.query(countSql, values);
 
         return NextResponse.json({
             data: rows,
@@ -76,8 +85,8 @@ export async function POST(request: NextRequest) {
 
     const sql = `
       INSERT INTO core_product
-      (name, barcode, price, stock)
-      VALUES (?, ?, ?, 0)
+      (name, barcode, price)
+      VALUES (?, ?, ?)
     `;
 
     const [result]: any = await pool.query(sql, [
