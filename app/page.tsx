@@ -349,56 +349,6 @@ export default function Home() {
                 Total Produk {total}
               </PaginationContent>
             </Pagination>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (page > 1) {
-                        setLoading(true);
-                        setPage(page - 1);
-                      }
-                    }}
-                  />
-                </PaginationItem>
-                {pageNumbers.map((item, index) => (
-                  <PaginationItem key={index}>
-                    {item === "..." ? (
-                      <PaginationEllipsis />
-                    ) : (
-                      <PaginationLink
-                        href="#"
-                        isActive={page === item}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (page !== item) {
-                            setLoading(true);
-                            setPage(item);
-                          }
-                        }}
-                      >
-                        {item}
-                      </PaginationLink>
-                    )}
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (page < totalPages) {
-                        setLoading(true);
-                        setPage(page + 1);
-                      }
-                    }}
-                  />
-                </PaginationItem>
-                Total Produk {total}
-              </PaginationContent>
-            </Pagination>
           </CardContent>
         </Card>
       </main>
