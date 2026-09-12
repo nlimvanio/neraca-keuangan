@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import pool from "@/lib/db";
 
-export async function GET(request : NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
 
@@ -10,19 +10,19 @@ export async function GET(request : NextRequest) {
     const endDate = searchParams.get("endDate");
 
     if (!startDate || !endDate) {
-        return NextResponse.json(
-            { message: "Start date and end date are required" },
-            { status: 400 }
-        );
+      return NextResponse.json(
+        { message: "Start date and end date are required" },
+        { status: 400 }
+      );
     }
 
     interface TransactionRow {
-        transaction_date: Date;
-        name: string;
-        barcode: string;
-        quantity: number;
-        transaction_type: string;
-        created_by: string;
+      transaction_date: Date;
+      name: string;
+      barcode: string;
+      quantity: number;
+      transaction_type: string;
+      created_by: string;
     }
 
     const sql = `
@@ -38,7 +38,7 @@ export async function GET(request : NextRequest) {
         transaction_type,
         cu.name created_by
       FROM transactions t
-      LEFT JOIN core_product cp ON cp.id = t.id_product
+      LEFT JOIN core_product cp ON cp.id = t.product_id
       LEFT JOIN core_user cu ON cu.id = t.created_by
       WHERE transaction_date >= ?
         AND transaction_date < DATE_ADD(?, INTERVAL 1 DAY)
@@ -46,8 +46,8 @@ export async function GET(request : NextRequest) {
     `;
 
     const [rows] = await pool.query(sql, [
-        startDate,
-        endDate,
+      startDate,
+      endDate,
     ]);
 
     const transactions = rows as TransactionRow[];
@@ -107,16 +107,16 @@ export async function GET(request : NextRequest) {
     };
 
     function formatDate(date: Date) {
-        return new Intl.DateTimeFormat("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: false,
-            timeZone: "Asia/Jakarta",
-        }).format(date);
+      return new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+        timeZone: "Asia/Jakarta",
+      }).format(date);
     }
 
     const buffer = await workbook.xlsx.writeBuffer();

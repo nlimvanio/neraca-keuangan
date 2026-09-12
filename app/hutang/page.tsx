@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { FormEvent, useMemo, useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
@@ -63,24 +63,24 @@ interface Product {
 
 
 
-async function getTransactions(
+async function getHutang(
   page: number,
   pageSize: number,
   search: string) {
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        pageSize: pageSize.toString()
-      });
-      if (search.trim()) {
-        params.append("search", search);
-      }
-      const res = await fetch(`/api/transaction/hutang?${params}`);
-      const data = await res.json();
-      return data;
-    } catch (err) {
-      console.error(err);
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString()
+    });
+    if (search.trim()) {
+      params.append("search", search);
     }
+    const res = await fetch(`/api/transaction/hutang?${params}`);
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function getPageNumbers(currentPage: number, totalPages: number) {
@@ -111,13 +111,12 @@ export default function Home() {
   console.log("Home rendered");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
 
   // tambah get user id
   // const [userId] = "1";
-  
+
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const pageNumbers = getPageNumbers(page, totalPages);
@@ -138,10 +137,10 @@ export default function Home() {
   const offset = (page - 1) * pageSize;
   // setLoading(true);
   useEffect(() => {
-    console.log("useEffect running"); 
+    console.log("useEffect running");
     async function loadTransactions() {
       console.log("Calling getTransaction()");
-      const result = await getTransactions(
+      const result = await getHutang(
         page,
         pageSize,
         search
@@ -168,8 +167,8 @@ export default function Home() {
     );
   }, [transactions, search]);
 
-  async function refreshTransactions(){
-    const data = await getTransactions(page, pageSize, search);
+  async function refreshTransactions() {
+    const data = await getHutang(page, pageSize, search);
     if (data) {
       setTransactions(data.data);
       setTotal(data.total);
@@ -188,7 +187,7 @@ export default function Home() {
 
     return () => clearTimeout(timer);
   }, [productSearch, selectedProduct]);
-  
+
   async function searchProducts(search: string) {
     if (!search.trim()) {
       setProductResults([]);
@@ -217,55 +216,6 @@ export default function Home() {
       setProductResults([]);
     } finally {
       setProductLoading(false);
-    }
-  }
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {    
-    event.preventDefault();
-
-    try {
-      setIsSubmitting(true);
-      const res = await fetch("/api/transaction", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id_product: form.id_product,
-          transaction_type: form.transaction_type,
-          quantity: form.quantity
-        }),
-      });
-
-      const response = await res.json();
-      if (!res.ok) {
-        throw new Error(response.message || "Failed to save transaction.");
-      }
-
-      console.log("Transaction created:", response);
-
-      // Reload table
-      await refreshTransactions();
-
-      // Clear form
-
-      setProductSearch("");
-      setSelectedProduct(null);
-      setProductResults([]);
-      setShowProductDropdown(false);
-      setForm(emptyForm);
-      setShowModal(false);
-
-
-    } catch (err) {
-      console.error(err);
-      alert(
-        err instanceof Error
-          ? err.message
-          : "Failed to save transaction."
-      );
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -309,14 +259,14 @@ export default function Home() {
     }
   }
 
-  async function handleDelete(transactionId: number){
-    
-    try{
+  async function handleDelete(transactionId: number) {
+
+    try {
       setLoading(true);
       const deleteUrl = `api/transaction/${transactionId}`
 
-      await fetch(deleteUrl, {method:"DELETE"});
-    } catch(error){
+      await fetch(deleteUrl, { method: "DELETE" });
+    } catch (error) {
       console.error(error);
       alert("Failed to delete transaction");
     } finally {
@@ -331,20 +281,17 @@ export default function Home() {
       <main className="main">
         <Card>
           <CardHeader>
-            <CardTitle>Transaksi</CardTitle>
+            <CardTitle>Hutang</CardTitle>
           </CardHeader>
           <div className="panel-header">
             <Input
-              placeholder="Cari transaksi ... (Cth nama, barcode)"
+              placeholder="Cari hutang ... (Cth nama, barcode)"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage(1);
               }}
             />
-            <Button onClick={() => setShowModal(true)}>
-              + Transaksi
-            </Button>
           </div>
 
           <div className="panel-header">
@@ -412,7 +359,6 @@ export default function Home() {
                         }).replace(",", "")}
                       </TableCell>
                       <TableCell><strong>{transaction.name}</strong> ({transaction.barcode})</TableCell>
-                      {/* <TableCell>{transaction.transaction_type}</TableCell> */}
                       <TableCell>
                         {transaction.transaction_type === "I" ? (
                           <span>Beli</span>
@@ -424,7 +370,7 @@ export default function Home() {
                       </TableCell>
                       <TableCell>{transaction.quantity}</TableCell>
                       <TableCell>Rp. {transaction.amount}</TableCell>
-                      <TableCell><button className="button rounded-md bg-red-500 text-center text-white hover:bg-red-600" onClick={()=>handleDelete(transaction.id)}>Delete</button></TableCell>
+                      <TableCell><button className="button rounded-md bg-red-500 text-center text-white hover:bg-red-600" onClick={() => handleDelete(transaction.id)}>Delete</button></TableCell>
                     </TableRow>
                   );
                 }) : (
@@ -433,55 +379,55 @@ export default function Home() {
               </TableBody>
             </Table>
             <Pagination className="mt-4">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (page > 1) {
-                          setLoading(true);
-                          setPage(page - 1);
-                        }
-                      }}
-                    />
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (page > 1) {
+                        setLoading(true);
+                        setPage(page - 1);
+                      }
+                    }}
+                  />
+                </PaginationItem>
+                {pageNumbers.map((item, index) => (
+                  <PaginationItem key={index}>
+                    {item === "..." ? (
+                      <PaginationEllipsis />
+                    ) : (
+                      <PaginationLink
+                        href="#"
+                        isActive={page === item}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page !== item) {
+                            setLoading(true);
+                            setPage(item);
+                          }
+                        }}
+                      >
+                        {item}
+                      </PaginationLink>
+                    )}
                   </PaginationItem>
-                  {pageNumbers.map((item, index) => (
-                    <PaginationItem key={index}>
-                      {item === "..." ? (
-                        <PaginationEllipsis />
-                      ) : (
-                        <PaginationLink
-                          href="#"
-                          isActive={page === item}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if(page !== item){
-                              setLoading(true);
-                              setPage(item);
-                            }
-                          }}
-                        >
-                          {item}
-                        </PaginationLink>
-                      )}
-                    </PaginationItem>
-                  ))}
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (page < totalPages) {
-                          setLoading(true);
-                          setPage(page + 1);
-                        }
-                      }}
-                    />
-                  </PaginationItem>
-                  Total Transaksi {total}
-                </PaginationContent>
-              </Pagination>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (page < totalPages) {
+                        setLoading(true);
+                        setPage(page + 1);
+                      }
+                    }}
+                  />
+                </PaginationItem>
+                Total Transaksi {total}
+              </PaginationContent>
+            </Pagination>
           </CardContent>
         </Card>
       </main>
