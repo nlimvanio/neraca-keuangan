@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         }
 
         const searchSql = `
-        SELECT *
+        SELECT t.*, cp.name, cp.barcode
         FROM transactions t
         LEFT OUTER JOIN user_branch ub ON ub.branch_id = t.branch_id
         LEFT OUTER JOIN core_product cp ON cp.id = t.product_id 

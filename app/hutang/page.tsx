@@ -122,7 +122,6 @@ export default function Home() {
   const [totalPages, setTotalPages] = useState(0);
   const pageNumbers = getPageNumbers(page, totalPages);
   const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<TransactionForm>(emptyForm);
 
   const [productSearch, setProductSearch] = useState("");
@@ -254,7 +253,6 @@ export default function Home() {
       setProductResults([]);
       setShowProductDropdown(false);
       setForm(emptyForm);
-      setShowModal(false);
 
 
     } catch (err) {
@@ -309,6 +307,23 @@ export default function Home() {
     }
   }
 
+  async function handleLunas(transactionId: number){
+    if (confirm("Apakah anda yakin untuk melakukan pelunasan terhadap transaksi ini?") == true) {
+      try{
+        setLoading(true);
+        const updateUrl = `api/transaction/hutang/${transactionId}`
+
+        await fetch(updateUrl, {method:"PUT"});
+      } catch(error){
+        console.error(error);
+        alert("Failed to update transaction");
+      } finally {
+        await refreshTransactions();
+        setLoading(false);
+      }
+    }
+  }
+
   async function handleDelete(transactionId: number){
     
     try{
@@ -331,7 +346,7 @@ export default function Home() {
       <main className="main">
         <Card>
           <CardHeader>
-            <CardTitle>Transaksi</CardTitle>
+            <CardTitle>Hutang</CardTitle>
           </CardHeader>
           <div className="panel-header">
             <Input
@@ -342,9 +357,6 @@ export default function Home() {
                 setPage(1);
               }}
             />
-            <Button onClick={() => setShowModal(true)}>
-              + Transaksi
-            </Button>
           </div>
 
           <div className="panel-header">
@@ -424,7 +436,10 @@ export default function Home() {
                       </TableCell>
                       <TableCell>{transaction.quantity}</TableCell>
                       <TableCell>Rp. {transaction.amount}</TableCell>
-                      <TableCell><button className="button rounded-md bg-red-500 text-center text-white hover:bg-red-600" onClick={()=>handleDelete(transaction.id)}>Delete</button></TableCell>
+                      <TableCell>
+                        <button className="button rounded-md bg-red-500 text-center text-white hover:bg-red-600" onClick={()=>handleLunas(transaction.id)}>Lunas</button>&nbsp;
+                        <button className="button rounded-md bg-red-500 text-center text-white hover:bg-red-600" onClick={()=>handleDelete(transaction.id)}>Delete</button>
+                      </TableCell>
                     </TableRow>
                   );
                 }) : (
