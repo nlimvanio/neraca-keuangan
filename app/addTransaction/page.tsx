@@ -12,7 +12,7 @@ interface Product {
     barcode: string;
 }
 
-type Pemasukan = {
+type Penjualan = {
     productName: string,
     transactionDate: string,
     quantity: number,
@@ -21,7 +21,7 @@ type Pemasukan = {
     paid: boolean
 }
 
-const initialPemasukan = {
+const initialPenjualan = {
     productName: "",
     transactionDate: "",
     quantity: 0,
@@ -30,7 +30,7 @@ const initialPemasukan = {
     paid: true
 }
 
-type Pengeluaran = {
+type Pembelian = {
     productName: string,
     transactionDate: string,
     quantity: number,
@@ -39,7 +39,7 @@ type Pengeluaran = {
     type: string,
     paid: boolean
 }
-const initialPengeluaran = {
+const initialPembelian = {
     productName: "",
     transactionDate: "",
     quantity: 0,
@@ -50,9 +50,9 @@ const initialPengeluaran = {
 }
 
 export default function Home() {
-    const [transactionType, setTransactionType] = useState("pemasukan");
-    const listPengeluaran = [initialPengeluaran];
-    const listPemasukan = [initialPemasukan];
+    const [transactionType, setTransactionType] = useState("penjualan");
+    const listPembelian = [initialPembelian];
+    const listPenjualan = [initialPenjualan];
     const [isLoading, setLoading] = useState(false);
 
 
@@ -72,27 +72,30 @@ export default function Home() {
                                     <input
                                         type="radio"
                                         name="transactionType"
-                                        value="pemasukan"
-                                        checked={transactionType === "pemasukan"}
+                                        value="penjualan"
+                                        checked={transactionType === "penjualan"}
                                         onChange={e => setTransactionType(e.target.value)}
                                     />
-                                    Pemasukan
+                                    Penjualan
                                 </label>
                                 <label className="ms-2">
                                     <input
                                         type="radio"
                                         name="transactionType"
-                                        value="pengeluaran"
-                                        checked={transactionType === "pengeluaran"}
+                                        value="pembelian"
+                                        checked={transactionType === "pembelian"}
                                         onChange={e => setTransactionType(e.target.value)}
                                     />
-                                    Pengeluaran
+                                    Pembelian
                                 </label>
                             </div>
                         </div>
                     </div>
                     <CardContent>
-                        {renderBeli(listPengeluaran, setLoading)}
+                        {transactionType === "pembelian"
+                            ? <RenderPembelian initialList={listPembelian} setLoading={setLoading} />
+                            : <RenderPenjualan initialList={listPenjualan} setLoading={setLoading} />
+                        }
                     </CardContent>
                 </Card>
             </main>
@@ -100,7 +103,7 @@ export default function Home() {
     )
 }
 
-async function handleSubmit(event: FormEvent<HTMLFormElement>, transactionlist: Pengeluaran[] | Pemasukan[], setLoading: Dispatch<SetStateAction<boolean>>) {
+async function handleSubmit(event: FormEvent<HTMLFormElement>, transactionlist: Pembelian[] | Penjualan[], setLoading: Dispatch<SetStateAction<boolean>>) {
     event.preventDefault();
 
     try {
@@ -165,117 +168,19 @@ const searchProducts = (
     }
 }
 
-function renderBeli(initialList: Pengeluaran[], setLoading: Dispatch<SetStateAction<boolean>>) {
-    const [listPengeluaran, updateListPengeluaran] = useState<Pengeluaran[]>([...initialList]);
-    const [searchResults, setProduct] = useState<Product[]>([]);
-    const [productLoading, setProductLoading] = useState(false);
-    const [searchText, setSearch] = useState("");
-    const search = searchProducts(setProduct, setProductLoading);
+function RenderPembelian(
+    { initialList, setLoading }:
+        { initialList: Pembelian[], setLoading: Dispatch<SetStateAction<boolean>> }
+) {
+    const [listPembelian, updateListPembelian] = useState<Pembelian[]>([...initialList]);
     return (
-        <form onSubmit={e => handleSubmit(e, listPengeluaran, setLoading)}>
+        <form onSubmit={e => handleSubmit(e, listPembelian, setLoading)}>
             <div className="flex flex-col justify-between w-full gap-4 p-3 ">
-                {listPengeluaran.map((pengeluaran, index) =>
-                    <div className="flex flex-row justify-between w-full gap-4 p-5 overflow-x-auto border-b border-gray-300" key={index}>
-                        <div className="flex flex-col justify-between min-w-[150px]">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">Nama produk</label>
-                            {/* Nama produk */}
-                            <Combobox
-                                items={searchResults}
-                                value={pengeluaran.productName}
-                                onValueChange={e => {
-                                    updateListPengeluaran(prev =>
-                                        prev.map((item, i) => i === index ? { ...item, productName: e ? e : "" } : item)
-                                    )
-                                }}
-                            >
-                                <ComboboxInput
-                                    placeholder="Cari produk"
-                                    value={searchText}
-                                    onChange={async e => {
-                                        setSearch(e.target.value)
-                                        if (e.target.value.length >= 3) {
-                                            await search(e.target.value);
-                                        } else {
-                                            setProduct([]);
-                                        }
-                                    }}
-                                />
-                                <ComboboxContent>
-                                    <ComboboxEmpty>
-                                        {productLoading ? "Mencari..." : "Produk tidak ditemukan"}
-                                    </ComboboxEmpty>
-                                    <ComboboxList>
-                                        {(product) => (
-                                            <ComboboxItem key={product.id} value={product}>
-                                                <strong>{product.name}</strong> | <small>{product.barcode}</small>
-                                            </ComboboxItem>
-                                        )}
-                                    </ComboboxList>
-                                </ComboboxContent>
-                            </Combobox>
-                        </div>
-                        <div className="flex flex-col justify-between min-w-[150px]">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">Tanggal Transaksi</label>
-                            <input type="date" placeholder="Tanggal Transaksi" value={pengeluaran.transactionDate}
-                                onChange={e => {
-                                    updateListPengeluaran(prev =>
-                                        prev.map((item, i) => i === index ? { ...item, transactionDate: e.target.value } : item)
-                                    )
-                                }}
-                                className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
-                                focus:outline-blue-300 bg-gray-100"
-                            />
-                        </div>
-                        <div className="flex flex-col justify-between min-w-[100px]">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">Jumlah Barang</label>
-                            <input type="number" placeholder="Jumlah Barang" value={pengeluaran.quantity}
-                                onChange={e => {
-                                    updateListPengeluaran((prev) =>
-                                        prev.map((item, i) => i === index ? { ...item, quantity: Number(e.target.value) } : item)
-                                    )
-                                }}
-                                min="0"
-                                className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
-                                focus:outline-blue-300 bg-gray-100"
-                            />
-                        </div>
-                        <div className="flex flex-col justify-between min-w-[100px]">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">Total Harga</label>
-                            <input type="text" placeholder="Harga Barang"
-                                value={
-                                    pengeluaran.amount ? new Intl.NumberFormat("id-ID").format(pengeluaran.amount) : ""
-                                }
-                                onChange={e => {
-                                    const rawValue = e.target.value.replace(/\./g, "");
-                                    updateListPengeluaran(prev =>
-                                        prev.map((item, i) => i === index ? { ...item, amount: Number(rawValue) } : item)
-                                    )
-                                }}
-                                className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
-                                focus:outline-blue-300 bg-gray-100"
-                            />
-                        </div>
-                        <div className="flex flex-col justify-around items-center min-w-[100px]">
-                            <label className="block text-gray-700 text-sm font-bold mb-2">Lunas</label>
-                            <input type="checkbox" checked={pengeluaran.paid}
-                                onChange={e => {
-                                    updateListPengeluaran(prev =>
-                                        prev.map((item, i) => i === index ? { ...item, paid: e.target.checked } : item)
-                                    )
-                                }}
-                                className="w-6 h-6"
-                            />
-                        </div>
-                        <div>
-                            <label className="invisible">Delete</label>
-                            <button type="button" className="close-button"
-                                onClick={() => updateListPengeluaran(prev => prev.filter((_, i) => i !== index))}
-                                aria-label="Close">×</button>
-                        </div>
-                    </div>
+                {listPembelian.map((pembelian, index) =>
+                    <PembelianRow key={index} pembelian={pembelian} index={index} updateListPembelian={updateListPembelian} />
                 )}
                 <div className="flex items-center justify-center w-full">
-                    <button type="button" onClick={() => updateListPengeluaran(prev => [...prev, initialPengeluaran])} className="button primary">
+                    <button type="button" onClick={() => updateListPembelian(prev => [...prev, initialPembelian])} className="button primary">
                         Tambah Baris
                     </button>
                 </div>
@@ -285,4 +190,268 @@ function renderBeli(initialList: Pengeluaran[], setLoading: Dispatch<SetStateAct
 
 }
 
+function PembelianRow(
+    { pembelian, index, updateListPembelian }:
+        {
+            pembelian: Pembelian;
+            index: number;
+            updateListPembelian: Dispatch<SetStateAction<Pembelian[]>>
+        }
+) {
+    const [searchProductResults, setProduct] = useState<Product[]>([]);
+    const [productLoading, setProductLoading] = useState(false);
+    const [searchText, setSearch] = useState("");
+    const search = searchProducts(setProduct, setProductLoading);
+    return (
+        <div className="flex flex-row justify-between w-full gap-4 pt-3 pb-5 overflow-x-auto border-b border-gray-300" key={index}>
+            <div className="flex flex-col justify-between">
+                <label className="block text-gray-700 text-sm font-bold mb-2">No. Invoice</label>
+                <input type="text" placeholder="Nomor Invoice" value={pembelian.invoiceNo}
+                    onChange={e => {
+                        updateListPembelian(
+                            prev => prev.map((item, i) => i === index ? { ...item, invoiceNo: e.target.value } : item)
+                        )
+                    }}
+                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                                focus:outline-blue-300"
+                />
+            </div>
+            <div className="flex flex-col justify-between min-w-[150px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Nama produk</label>
+                {/* Nama produk */}
+                <Combobox
+                    items={searchProductResults}
+                    value={pembelian.productName}
+                    onValueChange={e => {
+                        const selectedValue = e ?? "";
+                        setSearch(selectedValue)
+                        updateListPembelian(prev =>
+                            prev.map((item, i) => i === index ? { ...item, productName: e ? e : "" } : item)
+                        )
+                    }}
+                >
+                    <ComboboxInput
+                        placeholder="Cari produk"
+                        value={searchText}
+                        onChange={async e => {
+                            setSearch(e.target.value)
+                            if (e.target.value.length >= 3) {
+                                await search(e.target.value);
+                            } else {
+                                setProduct([]);
+                            }
+                        }}
+                    />
+                    <ComboboxContent>
+                        <ComboboxEmpty>
+                            {productLoading ? "Mencari..." : "Produk tidak ditemukan"}
+                        </ComboboxEmpty>
+                        <ComboboxList>
+                            {(product) => (
+                                <ComboboxItem key={product.id} value={product.name}>
+                                    <strong>{product.name}</strong> | <small>{product.barcode}</small>
+                                </ComboboxItem>
+                            )}
+                        </ComboboxList>
+                    </ComboboxContent>
+                </Combobox>
+            </div>
+            <div className="flex flex-col justify-between min-w-[150px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Tanggal Transaksi</label>
+                <input type="date" placeholder="Tanggal Transaksi" value={pembelian.transactionDate}
+                    onChange={e => {
+                        updateListPembelian(prev =>
+                            prev.map((item, i) => i === index ? { ...item, transactionDate: e.target.value } : item)
+                        )
+                    }}
+                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                                focus:outline-blue-300 "
+                />
+            </div>
+            <div className="flex flex-col justify-between min-w-[100px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Jumlah Barang</label>
+                <input type="number" placeholder="Jumlah Barang" value={pembelian.quantity}
+                    onChange={e => {
+                        updateListPembelian((prev) =>
+                            prev.map((item, i) => i === index ? { ...item, quantity: Number(e.target.value) } : item)
+                        )
+                    }}
+                    min="0"
+                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                                focus:outline-blue-300 "
+                />
+            </div>
+            <div className="flex flex-col justify-between min-w-[100px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Total Harga</label>
+                <input type="text" placeholder="Harga Barang"
+                    value={
+                        pembelian.amount ? new Intl.NumberFormat("id-ID").format(pembelian.amount) : ""
+                    }
+                    onChange={e => {
+                        const rawValue = e.target.value.replace(/\./g, "");
+                        updateListPembelian(prev =>
+                            prev.map((item, i) => i === index ? { ...item, amount: Number(rawValue) } : item)
+                        )
+                    }}
+                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                                focus:outline-blue-300 "
+                />
+            </div>
+            <div className="flex flex-col justify-around items-center min-w-[100px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Lunas</label>
+                <input type="checkbox" checked={pembelian.paid}
+                    onChange={e => {
+                        updateListPembelian(prev =>
+                            prev.map((item, i) => i === index ? { ...item, paid: e.target.checked } : item)
+                        )
+                    }}
+                    className="w-6 h-6"
+                />
+            </div>
+            <div>
+                <label className="invisible">Delete</label>
+                <button type="button" className="close-button"
+                    onClick={() => updateListPembelian(prev => prev.filter((_, i) => i !== index))}
+                    aria-label="Close">×</button>
+            </div>
+        </div>
+    )
+}
 
+function RenderPenjualan(
+    { initialList, setLoading }:
+        { initialList: Penjualan[], setLoading: Dispatch<SetStateAction<boolean>> }
+) {
+    const [listPenjualan, updateListPenjualan] = useState<Penjualan[]>([...initialList]);
+
+    return (
+        <form onSubmit={e => handleSubmit(e, listPenjualan, setLoading)}>
+            <div className="flex flex-col justify-between w-full gap-4 p-3">
+                {listPenjualan.map((Penjualan, index) =>
+                    <PenjualanRow key={index} Penjualan={Penjualan} index={index} updateListPenjualan={updateListPenjualan} />
+                )}
+                <div className="flex items-center justify-center w-full">
+                    <button type="button" onClick={() => updateListPenjualan(prev => [...prev, initialPembelian])} className="button primary">
+                        Tambah Baris
+                    </button>
+                </div>
+            </div>
+        </form>
+    )
+}
+
+function PenjualanRow(
+    { Penjualan, index, updateListPenjualan }:
+        {
+            Penjualan: Penjualan;
+            index: number;
+            updateListPenjualan: Dispatch<SetStateAction<Penjualan[]>>
+        }
+) {
+    const [searchProductResults, setProduct] = useState<Product[]>([]);
+    const [productLoading, setProductLoading] = useState(false);
+    const [searchText, setSearch] = useState("");
+    const search = searchProducts(setProduct, setProductLoading);
+    return (
+        <div className="flex flex-row justify-between w-full gap-4 pt-3 pb-5 overflow-x-auto border-b border-gray-300" key={index}>
+            <div className="flex flex-col justify-between min-w-[150px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Nama produk</label>
+                {/* Nama produk */}
+                <Combobox
+                    items={searchProductResults}
+                    value={Penjualan.productName}
+                    onValueChange={e => {
+                        const selectedValue = e ?? "";
+                        setSearch(selectedValue)
+                        updateListPenjualan(prev =>
+                            prev.map((item, i) => i === index ? { ...item, productName: e ? e : "" } : item)
+                        )
+                    }}
+                >
+                    <ComboboxInput
+                        placeholder="Cari produk"
+                        value={searchText}
+                        onChange={async e => {
+                            setSearch(e.target.value)
+                            if (e.target.value.length >= 3) {
+                                await search(e.target.value);
+                            } else {
+                                setProduct([]);
+                            }
+                        }}
+                    />
+                    <ComboboxContent>
+                        <ComboboxEmpty>
+                            {productLoading ? "Mencari..." : "Produk tidak ditemukan"}
+                        </ComboboxEmpty>
+                        <ComboboxList>
+                            {(product) => (
+                                <ComboboxItem key={product.id} value={product.name}>
+                                    <strong>{product.name}</strong> | <small>{product.barcode}</small>
+                                </ComboboxItem>
+                            )}
+                        </ComboboxList>
+                    </ComboboxContent>
+                </Combobox>
+            </div>
+            <div className="flex flex-col justify-between min-w-[150px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Tanggal Transaksi</label>
+                <input type="date" placeholder="Tanggal Transaksi" value={Penjualan.transactionDate}
+                    onChange={e => {
+                        updateListPenjualan(prev =>
+                            prev.map((item, i) => i === index ? { ...item, transactionDate: e.target.value } : item)
+                        )
+                    }}
+                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                                focus:outline-blue-300 "
+                />
+            </div>
+            <div className="flex flex-col justify-between min-w-[100px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Jumlah Barang</label>
+                <input type="number" placeholder="Jumlah Barang" value={Penjualan.quantity}
+                    onChange={e => {
+                        updateListPenjualan((prev) =>
+                            prev.map((item, i) => i === index ? { ...item, quantity: Number(e.target.value) } : item)
+                        )
+                    }}
+                    min="0"
+                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                                focus:outline-blue-300 "
+                />
+            </div>
+            <div className="flex flex-col justify-between min-w-[100px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Total Harga</label>
+                <input type="text" placeholder="Harga Barang"
+                    value={
+                        Penjualan.amount ? new Intl.NumberFormat("id-ID").format(Penjualan.amount) : ""
+                    }
+                    onChange={e => {
+                        const rawValue = e.target.value.replace(/\./g, "");
+                        updateListPenjualan(prev =>
+                            prev.map((item, i) => i === index ? { ...item, amount: Number(rawValue) } : item)
+                        )
+                    }}
+                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
+                                focus:outline-blue-300 "
+                />
+            </div>
+            <div className="flex flex-col justify-around items-center min-w-[100px]">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Lunas</label>
+                <input type="checkbox" checked={Penjualan.paid}
+                    onChange={e => {
+                        updateListPenjualan(prev =>
+                            prev.map((item, i) => i === index ? { ...item, paid: e.target.checked } : item)
+                        )
+                    }}
+                    className="w-6 h-6"
+                />
+            </div>
+            <div>
+                <label className="invisible">Delete</label>
+                <button type="button" className="close-button"
+                    onClick={() => updateListPenjualan(prev => prev.filter((_, i) => i !== index))}
+                    aria-label="Close">×</button>
+            </div>
+        </div>
+    )
+}
