@@ -186,6 +186,11 @@ async function handleSubmit(
     try {
         setLoading(true);
 
+        if (transactionlist.length < 1) {
+            alert("Minimal 1 transaksi untuk disimpan");
+            return;
+        }
+
         const listValidation = transactionType === "pembelian" ? z.array(pembelianValidation) : z.array(penjualanValidation);
         const result = listValidation.safeParse(transactionlist);
 

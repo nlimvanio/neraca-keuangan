@@ -67,6 +67,11 @@ async function handleSubmit(
 
     try {
         setLoading(true);
+        if (transactionlist.length < 1) {
+            alert("Minimal 1 transaksi untuk disimpan");
+            return;
+        }
+
         const listValidation = z.array(pengeluaranValidation);
         const result = listValidation.safeParse(transactionlist);
 
