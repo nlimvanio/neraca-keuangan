@@ -3,7 +3,7 @@ import Sidebar from "@/components/Sidebar";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
-import { Dispatch, FormEvent, SetStateAction, useState } from "react";
+import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from "react";
 import z, { number } from "zod";
 import { tr } from "zod/v4/locales";
 
@@ -178,7 +178,8 @@ async function handleSubmit(
     transactionlist: Pembelian[] | Penjualan[],
     setLoading: Dispatch<SetStateAction<boolean>>,
     transactionType: string,
-    setError: Dispatch<SetStateAction<Record<number, Record<string, string>>>>
+    setError: Dispatch<SetStateAction<Record<number, Record<string, string>>>>,
+    resetList: () => void
 ) {
     event.preventDefault();
 
@@ -203,7 +204,7 @@ async function handleSubmit(
             console.log(result.error.issues);
             return;
         }
-        setError([]);
+        setError({});
         const res = await fetch("/api/transaction", {
             method: "POST",
             headers: {
@@ -222,7 +223,7 @@ async function handleSubmit(
         }
 
         console.log("Transaction created:", response);
-
+        resetList();
 
     } catch (err) {
         console.error(err);
@@ -276,8 +277,9 @@ function RenderPembelian(
     const [pembelianErrors, setPembelianErrors] = useState<
         Record<number, Record<string, string>>
     >({})
+    const resetListPembelian = () => updateListPembelian([initialPembelian])
     return (
-        <form onSubmit={e => handleSubmit(e, listPembelian, setLoading, "pembelian", setPembelianErrors)} id="form-pembelian">
+        <form onSubmit={e => handleSubmit(e, listPembelian, setLoading, "pembelian", setPembelianErrors, resetListPembelian)} id="form-pembelian">
             <div className="flex flex-col justify-between w-full gap-4 p-3 ">
                 {listPembelian.map((pembelian, index) =>
                     <PembelianRow
@@ -311,6 +313,9 @@ function PembelianRow(
     const [searchProductResults, setProduct] = useState<Product[]>([]);
     const [productLoading, setProductLoading] = useState(false);
     const [searchText, setSearch] = useState("");
+    useEffect(() => {
+        setSearch(pembelian.productName);
+    }, [pembelian.productName]);
     const search = searchProducts(setProduct, setProductLoading);
     return (
         <div className="flex flex-row justify-between w-full gap-4 pt-3 pb-5 overflow-x-auto border-b border-gray-300" key={index}>
@@ -441,15 +446,16 @@ function RenderPenjualan(
     const [penjualanErrors, setPenjualanErrors] = useState<
         Record<number, Record<string, string>>
     >({});
+    const resetListPenjualan = () => updateListPenjualan([initialPenjualan])
 
     return (
-        <form onSubmit={e => handleSubmit(e, listPenjualan, setLoading, "penjualan", setPenjualanErrors)} id="form-penjualan">
+        <form onSubmit={e => handleSubmit(e, listPenjualan, setLoading, "penjualan", setPenjualanErrors, resetListPenjualan)} id="form-penjualan">
             <div className="flex flex-col justify-between w-full gap-4 p-3">
-                {listPenjualan.map((Penjualan, index) =>
-                    <PenjualanRow key={index} Penjualan={Penjualan} index={index} updateListPenjualan={updateListPenjualan} errors={penjualanErrors[index]} />
+                {listPenjualan.map((penjualan, index) =>
+                    <PenjualanRow key={index} penjualan={penjualan} index={index} updateListPenjualan={updateListPenjualan} errors={penjualanErrors[index]} />
                 )}
                 <div className="flex items-center justify-center w-full">
-                    <button type="button" onClick={() => updateListPenjualan(prev => [...prev, initialPembelian])} className="button primary">
+                    <button type="button" onClick={() => updateListPenjualan(prev => [...prev, initialPenjualan])} className="button primary">
                         Tambah Baris
                     </button>
                 </div>
@@ -459,9 +465,9 @@ function RenderPenjualan(
 }
 
 function PenjualanRow(
-    { Penjualan, index, updateListPenjualan, errors }:
+    { penjualan, index, updateListPenjualan, errors }:
         {
-            Penjualan: Penjualan;
+            penjualan: Penjualan;
             index: number;
             updateListPenjualan: Dispatch<SetStateAction<Penjualan[]>>,
             errors?: Record<string, string>
@@ -470,6 +476,10 @@ function PenjualanRow(
     const [searchProductResults, setProduct] = useState<Product[]>([]);
     const [productLoading, setProductLoading] = useState(false);
     const [searchText, setSearch] = useState("");
+    useEffect(() => {
+        setSearch(penjualan.productName);
+    }, [penjualan.productName]);
+
     const search = searchProducts(setProduct, setProductLoading);
     return (
         <div className="flex flex-row justify-between w-full gap-4 pt-3 pb-5 overflow-x-auto border-b border-gray-300" key={index}>
@@ -478,7 +488,7 @@ function PenjualanRow(
                 {/* Nama produk */}
                 <Combobox
                     items={searchProductResults}
-                    value={Penjualan.productName}
+                    value={penjualan.productName}
                     onValueChange={e => {
                         const selectedValue = e ?? "";
                         setSearch(selectedValue)
@@ -524,7 +534,7 @@ function PenjualanRow(
             </div>
             <div className="flex flex-col justify-between min-w-[150px]">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Tanggal Transaksi</label>
-                <input type="date" placeholder="Tanggal Transaksi" value={Penjualan.transactionDate}
+                <input type="date" placeholder="Tanggal Transaksi" value={penjualan.transactionDate}
                     onChange={e => {
                         updateListPenjualan(prev =>
                             prev.map((item, i) => i === index ? { ...item, transactionDate: e.target.value } : item)
@@ -541,7 +551,7 @@ function PenjualanRow(
             </div>
             <div className="flex flex-col justify-between min-w-[100px]">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Jumlah Barang</label>
-                <input type="number" placeholder="Jumlah Barang" value={Penjualan.quantity}
+                <input type="number" placeholder="Jumlah Barang" value={penjualan.quantity}
                     onChange={e => {
                         updateListPenjualan((prev) =>
                             prev.map((item, i) => i === index ? { ...item, quantity: Number(e.target.value) } : item)
@@ -557,7 +567,7 @@ function PenjualanRow(
             </div>
             <div className="flex flex-col justify-around items-center min-w-[100px]">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Lunas</label>
-                <input type="checkbox" checked={Penjualan.paid}
+                <input type="checkbox" checked={penjualan.paid}
                     onChange={e => {
                         updateListPenjualan(prev =>
                             prev.map((item, i) => i === index ? { ...item, paid: e.target.checked } : item)

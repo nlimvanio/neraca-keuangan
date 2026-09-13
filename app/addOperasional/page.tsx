@@ -60,7 +60,8 @@ async function handleSubmit(
     setLoading: Dispatch<SetStateAction<boolean>>,
     setError: Dispatch<SetStateAction<
         Record<number, Record<string, string>
-        >>>
+        >>>,
+    resetList: () => void
 ) {
     event.preventDefault();
 
@@ -102,7 +103,7 @@ async function handleSubmit(
         }
 
         console.log("Transaction created:", response);
-
+        resetList();
 
     } catch (err) {
         console.error(err);
@@ -122,8 +123,9 @@ function RenderPengeluaran(
 ) {
     const [listPengeluaran, updateListPengeluaran] = useState<Pengeluaran[]>([...initialList]);
     const [pengeluaranErrors, setPengeluaranErrors] = useState<Record<number, Record<string, string>>>({});
+    const resetListPengeluaran = () => updateListPengeluaran([initialPengeluaran])
     return (
-        <form onSubmit={e => handleSubmit(e, listPengeluaran, setLoading, setPengeluaranErrors)} id="form-pengeluaran">
+        <form onSubmit={e => handleSubmit(e, listPengeluaran, setLoading, setPengeluaranErrors, resetListPengeluaran)} id="form-pengeluaran">
             <div className="flex flex-col justify-between w-full gap-4 p-3 ">
                 {listPengeluaran.map((pengeluaran, index) =>
                     <PengeluaranRow
