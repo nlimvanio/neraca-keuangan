@@ -29,7 +29,7 @@ export async function PUT(
 
         const updateTransactionSql = `
         UPDATE transactions
-        SET paid = 1, payoff_by = ?
+        SET paid = 1, payoff_by = ?, payoff_date = NOW()
         WHERE id = ?
         `
 
