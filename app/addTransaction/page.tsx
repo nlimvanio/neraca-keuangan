@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Button } from "@/components/ui/button";
 import { Dispatch, FormEvent, SetStateAction, useState } from "react";
-import { number } from "zod";
+import z, { number } from "zod";
+import { tr } from "zod/v4/locales";
 
 interface Product {
     id: number;
@@ -12,42 +13,101 @@ interface Product {
     barcode: string;
 }
 
-type Penjualan = {
+export type Penjualan = {
     productName: string,
+    productId: number | null,
     transactionDate: string,
     quantity: number,
-    amount: number,
     type: string,
     paid: boolean
 }
 
-const initialPenjualan = {
+const initialPenjualan: Penjualan = {
     productName: "",
+    productId: null,
     transactionDate: "",
     quantity: 0,
-    amount: 0,
     type: "I",
     paid: true
 }
 
-type Pembelian = {
+const penjualanValidation = z.object({
+    productName: z
+        .string()
+        .trim()
+        .min(1, "Nama produk wajib diisi"),
+
+    productId: z
+        .number({
+            error: "Produk wajib dipilih"
+        })
+        .int()
+        .positive("Produk wajib dipilih"),
+
+    transactionDate: z
+        .string()
+        .date("Tanggal transaksi tidak valid"),
+
+    quantity: z
+        .number()
+        .int("Jumlah barang harus berupa bilangan bulat")
+        .positive("Jumlah barang harus lebih dari 0"),
+
+    type: z.literal("I"),
+
+    paid: z.boolean()
+})
+
+export type Pembelian = {
     productName: string,
+    productId: number | null,
     transactionDate: string,
     quantity: number,
-    invoiceNo: string,
-    amount: number,
+    invoiceNo: string
     type: string,
     paid: boolean
 }
-const initialPembelian = {
+const initialPembelian: Pembelian = {
     productName: "",
+    productId: null,
     transactionDate: "",
     quantity: 0,
     invoiceNo: "",
     type: "O",
-    amount: 0,
     paid: true
 }
+
+const pembelianValidation = z.object({
+    productName: z
+        .string()
+        .trim()
+        .min(1, "Nama produk wajib diisi"),
+
+    productId: z
+        .number({
+            error: "Produk wajib dipilih"
+        })
+        .int()
+        .positive("Produk wajib dipilih"),
+
+    transactionDate: z
+        .string()
+        .date("Tanggal transaksi tidak valid"),
+
+    quantity: z
+        .number()
+        .int("Jumlah barang harus berupa bilangan bulat")
+        .positive("Jumlah barang harus lebih dari 0"),
+
+    invoiceNo: z
+        .string()
+        .trim()
+        .min(1, "Nomor invoice wajib diisi"),
+
+    type: z.literal("O"),
+
+    paid: z.boolean()
+})
 
 export default function Home() {
     const [transactionType, setTransactionType] = useState("penjualan");
@@ -55,40 +115,50 @@ export default function Home() {
     const listPenjualan = [initialPenjualan];
     const [isLoading, setLoading] = useState(false);
 
-
     return (
         <div className="app-shell">
             <Sidebar />
             <main className="main">
                 <Card className="px-2">
-                    <CardHeader className="font-bold text-2xl px-2">
-                        Add Transaksi
+                    <CardHeader className="py-2 px-4">
+                        <div className="font-bold text-2xl ">
+                            Add Transaksi
+                        </div>
                     </CardHeader>
                     <div className="panel-header">
-                        <div className="flex flex-col gap-4 m-2 justify-content-center">
-                            <h3 className="font-semibold">Tipe transaksi</h3>
-                            <div className="flex flex-row">
-                                <label className="me-2">
-                                    <input
-                                        type="radio"
-                                        name="transactionType"
-                                        value="penjualan"
-                                        checked={transactionType === "penjualan"}
-                                        onChange={e => setTransactionType(e.target.value)}
-                                    />
-                                    Penjualan
-                                </label>
-                                <label className="ms-2">
-                                    <input
-                                        type="radio"
-                                        name="transactionType"
-                                        value="pembelian"
-                                        checked={transactionType === "pembelian"}
-                                        onChange={e => setTransactionType(e.target.value)}
-                                    />
-                                    Pembelian
-                                </label>
+                        <div className="flex flex-row w-ful justify-between">
+                            <div className="flex flex-col gap-4 m-2 justify-center">
+                                <h3 className="font-semibold">Tipe transaksi</h3>
+                                <div className="flex flex-row">
+                                    <label className="me-2">
+                                        <input
+                                            type="radio"
+                                            name="transactionType"
+                                            value="penjualan"
+                                            checked={transactionType === "penjualan"}
+                                            onChange={e => setTransactionType(e.target.value)}
+                                        />
+                                        Penjualan
+                                    </label>
+                                    <label className="ms-2">
+                                        <input
+                                            type="radio"
+                                            name="transactionType"
+                                            value="pembelian"
+                                            checked={transactionType === "pembelian"}
+                                            onChange={e => setTransactionType(e.target.value)}
+                                        />
+                                        Pembelian
+                                    </label>
+                                </div>
                             </div>
+                        </div>
+                        <div>
+                            <Button type="submit" form={transactionType === "pembelian" ? "form-pembelian" : "form-penjualan"}
+                                className="button primary h-10"
+                            >
+                                {isLoading ? "Menyimpan..." : "Simpan"}
+                            </Button>
                         </div>
                     </div>
                     <CardContent>
@@ -103,17 +173,47 @@ export default function Home() {
     )
 }
 
-async function handleSubmit(event: FormEvent<HTMLFormElement>, transactionlist: Pembelian[] | Penjualan[], setLoading: Dispatch<SetStateAction<boolean>>) {
+async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+    transactionlist: Pembelian[] | Penjualan[],
+    setLoading: Dispatch<SetStateAction<boolean>>,
+    transactionType: string,
+    setError: Dispatch<SetStateAction<Record<number, Record<string, string>>>>
+) {
     event.preventDefault();
 
     try {
         setLoading(true);
+
+        const listValidation = transactionType === "pembelian" ? z.array(pembelianValidation) : z.array(penjualanValidation);
+        const result = listValidation.safeParse(transactionlist);
+
+        if (!result.success) {
+            const newErrors: Record<number, Record<string, string>> = {}
+            for (const issue of result.error.issues) {
+                const rowIndex = issue.path[0] as number;
+                const field = issue.path[1] as string;
+
+                if (!newErrors[rowIndex]) {
+                    newErrors[rowIndex] = {}
+                }
+                newErrors[rowIndex][field] = issue.message
+            }
+            setError(newErrors)
+            console.log(result.error.issues);
+            return;
+        }
+        setError([]);
         const res = await fetch("/api/transaction", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify(transactionlist),
+            body: JSON.stringify({
+                transactions: transactionlist,
+                transactionType: transactionType
+            }
+            ),
         });
 
         const response = await res.json();
@@ -173,11 +273,20 @@ function RenderPembelian(
         { initialList: Pembelian[], setLoading: Dispatch<SetStateAction<boolean>> }
 ) {
     const [listPembelian, updateListPembelian] = useState<Pembelian[]>([...initialList]);
+    const [pembelianErrors, setPembelianErrors] = useState<
+        Record<number, Record<string, string>>
+    >({})
     return (
-        <form onSubmit={e => handleSubmit(e, listPembelian, setLoading)}>
+        <form onSubmit={e => handleSubmit(e, listPembelian, setLoading, "pembelian", setPembelianErrors)} id="form-pembelian">
             <div className="flex flex-col justify-between w-full gap-4 p-3 ">
                 {listPembelian.map((pembelian, index) =>
-                    <PembelianRow key={index} pembelian={pembelian} index={index} updateListPembelian={updateListPembelian} />
+                    <PembelianRow
+                        key={index}
+                        pembelian={pembelian}
+                        index={index}
+                        updateListPembelian={updateListPembelian}
+                        errors={pembelianErrors[index]}
+                    />
                 )}
                 <div className="flex items-center justify-center w-full">
                     <button type="button" onClick={() => updateListPembelian(prev => [...prev, initialPembelian])} className="button primary">
@@ -191,11 +300,12 @@ function RenderPembelian(
 }
 
 function PembelianRow(
-    { pembelian, index, updateListPembelian }:
+    { pembelian, index, updateListPembelian, errors }:
         {
             pembelian: Pembelian;
             index: number;
-            updateListPembelian: Dispatch<SetStateAction<Pembelian[]>>
+            updateListPembelian: Dispatch<SetStateAction<Pembelian[]>>,
+            errors: Record<string, string>
         }
 ) {
     const [searchProductResults, setProduct] = useState<Product[]>([]);
@@ -215,6 +325,11 @@ function PembelianRow(
                     className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
                                 focus:outline-blue-300"
                 />
+                {errors?.invoiceNo && (
+                    <p className="text-sm text-red-500 mt-1">
+                        {errors.invoiceNo}
+                    </p>
+                )}
             </div>
             <div className="flex flex-col justify-between min-w-[150px]">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Nama produk</label>
@@ -224,9 +339,10 @@ function PembelianRow(
                     value={pembelian.productName}
                     onValueChange={e => {
                         const selectedValue = e ?? "";
+                        const selectedProduct = searchProductResults.find(product => product.name === selectedValue)
                         setSearch(selectedValue)
                         updateListPembelian(prev =>
-                            prev.map((item, i) => i === index ? { ...item, productName: e ? e : "" } : item)
+                            prev.map((item, i) => i === index ? { ...item, productName: selectedValue, productId: selectedProduct?.id ?? null } : item)
                         )
                     }}
                 >
@@ -242,6 +358,11 @@ function PembelianRow(
                             }
                         }}
                     />
+                    {errors?.productName && (
+                        <p className="text-sm text-red-500 mt-1">
+                            {errors.productName}
+                        </p>
+                    )}
                     <ComboboxContent>
                         <ComboboxEmpty>
                             {productLoading ? "Mencari..." : "Produk tidak ditemukan"}
@@ -267,6 +388,11 @@ function PembelianRow(
                     className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
                                 focus:outline-blue-300 "
                 />
+                {errors?.transactionDate && (
+                    <p className="text-sm text-red-500 mt-1">
+                        {errors.transactionDate}
+                    </p>
+                )}
             </div>
             <div className="flex flex-col justify-between min-w-[100px]">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Jumlah Barang</label>
@@ -280,22 +406,11 @@ function PembelianRow(
                     className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
                                 focus:outline-blue-300 "
                 />
-            </div>
-            <div className="flex flex-col justify-between min-w-[100px]">
-                <label className="block text-gray-700 text-sm font-bold mb-2">Total Harga</label>
-                <input type="text" placeholder="Harga Barang"
-                    value={
-                        pembelian.amount ? new Intl.NumberFormat("id-ID").format(pembelian.amount) : ""
-                    }
-                    onChange={e => {
-                        const rawValue = e.target.value.replace(/\./g, "");
-                        updateListPembelian(prev =>
-                            prev.map((item, i) => i === index ? { ...item, amount: Number(rawValue) } : item)
-                        )
-                    }}
-                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
-                                focus:outline-blue-300 "
-                />
+                {errors?.quantity && (
+                    <p className="text-sm text-red-500 mt-1">
+                        {errors.quantity}
+                    </p>
+                )}
             </div>
             <div className="flex flex-col justify-around items-center min-w-[100px]">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Lunas</label>
@@ -323,12 +438,15 @@ function RenderPenjualan(
         { initialList: Penjualan[], setLoading: Dispatch<SetStateAction<boolean>> }
 ) {
     const [listPenjualan, updateListPenjualan] = useState<Penjualan[]>([...initialList]);
+    const [penjualanErrors, setPenjualanErrors] = useState<
+        Record<number, Record<string, string>>
+    >({});
 
     return (
-        <form onSubmit={e => handleSubmit(e, listPenjualan, setLoading)}>
+        <form onSubmit={e => handleSubmit(e, listPenjualan, setLoading, "penjualan", setPenjualanErrors)} id="form-penjualan">
             <div className="flex flex-col justify-between w-full gap-4 p-3">
                 {listPenjualan.map((Penjualan, index) =>
-                    <PenjualanRow key={index} Penjualan={Penjualan} index={index} updateListPenjualan={updateListPenjualan} />
+                    <PenjualanRow key={index} Penjualan={Penjualan} index={index} updateListPenjualan={updateListPenjualan} errors={penjualanErrors[index]} />
                 )}
                 <div className="flex items-center justify-center w-full">
                     <button type="button" onClick={() => updateListPenjualan(prev => [...prev, initialPembelian])} className="button primary">
@@ -341,11 +459,12 @@ function RenderPenjualan(
 }
 
 function PenjualanRow(
-    { Penjualan, index, updateListPenjualan }:
+    { Penjualan, index, updateListPenjualan, errors }:
         {
             Penjualan: Penjualan;
             index: number;
-            updateListPenjualan: Dispatch<SetStateAction<Penjualan[]>>
+            updateListPenjualan: Dispatch<SetStateAction<Penjualan[]>>,
+            errors?: Record<string, string>
         }
 ) {
     const [searchProductResults, setProduct] = useState<Product[]>([]);
@@ -363,8 +482,12 @@ function PenjualanRow(
                     onValueChange={e => {
                         const selectedValue = e ?? "";
                         setSearch(selectedValue)
+                        const selectedProduct = searchProductResults.find(product => product.name === selectedValue)
                         updateListPenjualan(prev =>
-                            prev.map((item, i) => i === index ? { ...item, productName: e ? e : "" } : item)
+                            prev.map((item, i) => i === index
+                                ? { ...item, productName: selectedValue, productId: selectedProduct?.id ?? null }
+                                : item
+                            )
                         )
                     }}
                 >
@@ -380,6 +503,11 @@ function PenjualanRow(
                             }
                         }}
                     />
+                    {errors?.productName && (
+                        <p className="text-sm text-red-500 mt-1">
+                            {errors.productName}
+                        </p>
+                    )}
                     <ComboboxContent>
                         <ComboboxEmpty>
                             {productLoading ? "Mencari..." : "Produk tidak ditemukan"}
@@ -405,6 +533,11 @@ function PenjualanRow(
                     className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
                                 focus:outline-blue-300 "
                 />
+                {errors?.transactionDate && (
+                    <p className="text-sm text-red-500 mt-1">
+                        {errors.transactionDate}
+                    </p>
+                )}
             </div>
             <div className="flex flex-col justify-between min-w-[100px]">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Jumlah Barang</label>
@@ -418,22 +551,9 @@ function PenjualanRow(
                     className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
                                 focus:outline-blue-300 "
                 />
-            </div>
-            <div className="flex flex-col justify-between min-w-[100px]">
-                <label className="block text-gray-700 text-sm font-bold mb-2">Total Harga</label>
-                <input type="text" placeholder="Harga Barang"
-                    value={
-                        Penjualan.amount ? new Intl.NumberFormat("id-ID").format(Penjualan.amount) : ""
-                    }
-                    onChange={e => {
-                        const rawValue = e.target.value.replace(/\./g, "");
-                        updateListPenjualan(prev =>
-                            prev.map((item, i) => i === index ? { ...item, amount: Number(rawValue) } : item)
-                        )
-                    }}
-                    className="text-sm custom-input w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm 
-                                focus:outline-blue-300 "
-                />
+                <p className="text-sm text-red-500 mt-1">
+                    {errors?.quantity}
+                </p>
             </div>
             <div className="flex flex-col justify-around items-center min-w-[100px]">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Lunas</label>
