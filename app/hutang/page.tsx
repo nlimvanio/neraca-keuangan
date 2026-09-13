@@ -219,54 +219,6 @@ export default function Home() {
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {    
-    event.preventDefault();
-
-    try {
-      setIsSubmitting(true);
-      const res = await fetch("/api/transaction", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id_product: form.id_product,
-          transaction_type: form.transaction_type,
-          quantity: form.quantity
-        }),
-      });
-
-      const response = await res.json();
-      if (!res.ok) {
-        throw new Error(response.message || "Failed to save transaction.");
-      }
-
-      console.log("Transaction created:", response);
-
-      // Reload table
-      await refreshTransactions();
-
-      // Clear form
-
-      setProductSearch("");
-      setSelectedProduct(null);
-      setProductResults([]);
-      setShowProductDropdown(false);
-      setForm(emptyForm);
-
-
-    } catch (err) {
-      console.error(err);
-      alert(
-        err instanceof Error
-          ? err.message
-          : "Failed to save transaction."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
   async function handleExport() {
 
     const start = new Date(startDate);
@@ -325,18 +277,19 @@ export default function Home() {
   }
 
   async function handleDelete(transactionId: number){
-    
-    try{
-      setLoading(true);
-      const deleteUrl = `api/transaction/${transactionId}`
+    if (confirm("Apakah anda yakin ingin menghapus transaksi ini?") == true) {
+      try{
+        setLoading(true);
+        const deleteUrl = `api/transaction/${transactionId}`
 
-      await fetch(deleteUrl, {method:"DELETE"});
-    } catch(error){
-      console.error(error);
-      alert("Failed to delete transaction");
-    } finally {
-      await refreshTransactions();
-      setLoading(false);
+        await fetch(deleteUrl, {method:"DELETE"});
+      } catch(error){
+        console.error(error);
+        alert("Failed to delete transaction");
+      } finally {
+        await refreshTransactions();
+        setLoading(false);
+      }
     }
   }
 
