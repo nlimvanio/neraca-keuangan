@@ -201,11 +201,13 @@ function renderBeli(initialList: Pengeluaran[], setLoading: Dispatch<SetStateAct
                                     }}
                                 />
                                 <ComboboxContent>
-                                    <ComboboxEmpty>Produk tidak ditemukan</ComboboxEmpty>
+                                    <ComboboxEmpty>
+                                        {productLoading ? "Mencari..." : "Produk tidak ditemukan"}
+                                    </ComboboxEmpty>
                                     <ComboboxList>
                                         {(product) => (
                                             <ComboboxItem key={product.id} value={product}>
-                                                {product.name} | {product.id}
+                                                <strong>{product.name}</strong> | <small>{product.barcode}</small>
                                             </ComboboxItem>
                                         )}
                                     </ComboboxList>
@@ -253,7 +255,7 @@ function renderBeli(initialList: Pengeluaran[], setLoading: Dispatch<SetStateAct
                                 focus:outline-blue-300 bg-gray-100"
                             />
                         </div>
-                        <div className="flex flex-col justify-between items-center min-w-[100px]">
+                        <div className="flex flex-col justify-around items-center min-w-[100px]">
                             <label className="block text-gray-700 text-sm font-bold mb-2">Lunas</label>
                             <input type="checkbox" checked={pengeluaran.paid}
                                 onChange={e => {
@@ -266,7 +268,9 @@ function renderBeli(initialList: Pengeluaran[], setLoading: Dispatch<SetStateAct
                         </div>
                         <div>
                             <label className="invisible">Delete</label>
-                            <button type="button" className="close-button" onClick={() => updateListPengeluaran(prev => prev.filter((_, i) => i !== index))} aria-label="Close">×</button>
+                            <button type="button" className="close-button"
+                                onClick={() => updateListPengeluaran(prev => prev.filter((_, i) => i !== index))}
+                                aria-label="Close">×</button>
                         </div>
                     </div>
                 )}
@@ -280,3 +284,5 @@ function renderBeli(initialList: Pengeluaran[], setLoading: Dispatch<SetStateAct
     )
 
 }
+
+
