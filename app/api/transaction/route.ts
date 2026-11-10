@@ -151,6 +151,8 @@ async function transactionStock(connection: PoolConnection, transactionType: str
 
   const productIds = transactions.map(transaction => transaction.productId);
   const productSearchPlaceholders = productIds.map(() => "?").join(",");
+  
+  //Fetch product prices and the user's branch
   const sql = `
       SELECT cp.id AS product_id, cp.price, ub.branch_id 
       FROM core_product cp 
@@ -175,7 +177,7 @@ async function transactionStock(connection: PoolConnection, transactionType: str
   });
 
   const placeholders = transactions.map(() => `(?, ?, ?, ?, ?, ?, ?)`).join(", ");
-
+  //Insert the transactions into DB
   const sql2 = `
       INSERT INTO transactions
       (transaction_date, product_id, transaction_type, quantity, amount, created_by, branch_id)
@@ -193,9 +195,21 @@ async function transactionStock(connection: PoolConnection, transactionType: str
 
   const [result2]: any = await connection.query(sql2, insertValues);
 
-  const caseStatements = transactions.map(() => `WHEN product_id = ? THEN stock ${method} ?`).join(" ")
+  const quantitiesByProduct = new Map<number, number>();
+  transactions.forEach(transaction => {
+    const productId = transaction.productId;
+    quantitiesByProduct.set(
+      productId!,
+      (quantitiesByProduct.get(productId!) ?? 0) + transaction.quantity
+    )
+  })
 
+  const stockUpdates = [...quantitiesByProduct.entries()];
+  const stockProductIds = stockUpdates.map(([productId])=> productId);
 
+  const caseStatements = stockUpdates.map(() => `WHEN product_id = ? THEN stock ${method} ?`).join(" ");
+
+  //Update the stock of the products in the user's branch
   const sql3 = `
     UPDATE stock_branch 
     SET stock = 
