@@ -25,7 +25,7 @@ export type Penjualan = {
 const initialPenjualan: Penjualan = {
     productName: "",
     productId: null,
-    transactionDate: "",
+    transactionDate: getToday(),
     quantity: 0,
     type: "I",
     paid: true
@@ -70,7 +70,7 @@ export type Pembelian = {
 const initialPembelian: Pembelian = {
     productName: "",
     productId: null,
-    transactionDate: "",
+    transactionDate: getToday(),
     quantity: 0,
     invoiceNo: "",
     type: "O",
@@ -206,7 +206,6 @@ async function handleSubmit(
                 newErrors[rowIndex][field] = issue.message
             }
             setError(newErrors)
-            console.log(result.error.issues);
             return;
         }
         setError({});
@@ -226,12 +225,9 @@ async function handleSubmit(
         if (!res.ok) {
             throw new Error(response.message || "Failed to save transaction.");
         }
-
-        console.log("Transaction created:", response);
         resetList();
 
     } catch (err) {
-        console.error(err);
         alert(
             err instanceof Error
                 ? err.message
@@ -263,11 +259,8 @@ const searchProducts = (
         }
         const data = await res.json();
 
-        console.log("Search result:", data);
-
         setProductResults(data.data);
     } catch (error) {
-        console.error(error);
         setProductResults([]);
     } finally {
         setProductLoading(false);
@@ -589,4 +582,13 @@ function PenjualanRow(
             </div>
         </div>
     )
+}
+
+function getToday() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
