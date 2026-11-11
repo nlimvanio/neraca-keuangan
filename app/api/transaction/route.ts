@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
     const { transactions, transactionType } = body;
     console.log(transactions)
     console.log(transactionType)
+
     let response;
 
     const cookieStore = await cookies();
@@ -95,7 +96,8 @@ export async function POST(request: NextRequest) {
     const userId = dec ? dec.userId : "";
 
     if (transactionType === "penjualan" || transactionType === "pembelian") {
-      response = await transactionStock(connection, transactionType, transactions, userId);
+      const combined = combineTransactions(transactions); //Combine transaction of the same product ID into just one entry
+      response = await transactionStock(connection, transactionType, combined, userId);
     } else if (transactionType === "pengeluaran") {
       response = await transactionPengeluaran(connection, transactions, userId);
     } else {
@@ -122,7 +124,8 @@ export async function POST(request: NextRequest) {
 async function transactionStock(connection: PoolConnection, transactionType: string, transactions: Penjualan[] | Pembelian[], userId: unknown) {
   let transaction_type = "";
   let method = "";
-  let missingFields;
+  let missingFields: boolean;
+
   if (transactionType === "penjualan") {
     transaction_type = "O";
     method = "-";
@@ -262,9 +265,9 @@ async function transactionPengeluaran(connection: PoolConnection, transactions: 
 
   const insertValues = transactions.flatMap(transaction => [
     transaction.transactionDate,
-    null,
+    null, // product_id
     "O",
-    null,
+    null, // quantity
     transaction.amount,
     userId,
     branchId
@@ -283,4 +286,25 @@ async function transactionPengeluaran(connection: PoolConnection, transactions: 
     { message: "Transaction created", id: result2.insertId },
     { status: 201 }
   )
+}
+/**
+ * Combine transactions of the same product into one entry
+ * @param transactions array of transactions
+ * @returns an array of combined transactions
+ */
+function combineTransactions(
+  transactions: Penjualan[] | Pembelian[]
+): Penjualan[] | Pembelian[] {
+  const hashMap = new Map<number | null, Penjualan | Pembelian>();
+
+  transactions.forEach(transaction=>{
+    const existing = hashMap.get(transaction.productId);
+    
+    if (existing) {
+      existing.quantity += transaction.quantity;
+    } else {
+      hashMap.set(transaction.productId, transaction)
+    }
+  })
+  return [...hashMap.values()]
 }
