@@ -124,13 +124,13 @@ async function transactionStock(connection: PoolConnection, transactionType: str
   let method = "";
   let missingFields;
   if (transactionType === "penjualan") {
-    transaction_type = "I";
+    transaction_type = "O";
     method = "-";
     missingFields = transactions.some((transaction: any) =>
       !transaction.productName || !transaction.transactionDate || !transaction.quantity
     )
   } else if (transactionType === "pembelian") {
-    transaction_type = "O";
+    transaction_type = "I";
     method = "+";
     missingFields = transactions.some((transaction: any) =>
       !transaction.invoiceNo || !transaction.productName || !transaction.transactionDate || !transaction.quantity
