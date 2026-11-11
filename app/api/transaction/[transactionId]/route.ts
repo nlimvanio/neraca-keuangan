@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { RowDataPacket } from 'mysql2';
 
 import pool from '@/lib/db';
+import { cookies } from 'next/headers';
+import { decrypt } from '@/lib/session';
 
 export async function DELETE(
     request: NextRequest,
@@ -20,18 +22,28 @@ export async function DELETE(
     try{
         await connection.beginTransaction();
 
+        const cookieStore = await cookies();
+        const cookie = cookieStore.get("session")?.value;
+        const dec = await decrypt(cookie);
+        const userId = dec ? dec.userId : "";
 
         const selectProductSql = `
-        SELECT t.quantity, t.product_id, t.transaction_type
+        SELECT t.id, t.quantity, t.product_id,
+        t.transaction_type, t.branch_id
         FROM transactions t
-        LEFT OUTER JOIN core_product cp ON cp.id = t.product_id
         WHERE t.id = ?
+        AND EXISTS (
+            SELECT 1
+            FROM user_branch ub
+            WHERE ub.user_id = ?
+            AND ub.branch_id = t.branch_id
+        )
         FOR UPDATE
         `;
         
         const [rows] = await connection.query<RowDataPacket[]>({
             sql: selectProductSql,
-            values: [transactionId]
+            values: [transactionId, userId]
         });
 
         if(rows.length === 0){
@@ -43,19 +55,19 @@ export async function DELETE(
             )
         };
 
-        const {quantity, product_id, transaction_type} = rows[0]
+        const {quantity, product_id, transaction_type, branch_id} = rows[0]
 
         const updateProductSql = `
-        UPDATE core_product cp
+        UPDATE stock_branch b
         SET stock = stock + ?
-        WHERE cp.id = ?
+        WHERE b.branch_id = ? AND b.product_id = ?
         `
 
         const stockChange = transaction_type.toLowerCase()=="i"? -Number(quantity) : Number(quantity); 
 
         await connection.query({
             sql: updateProductSql,
-            values: [stockChange, product_id]
+            values: [stockChange, branch_id,product_id]
         });
 
         const deleteSql = `
